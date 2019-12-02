@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-import layers.layers as layers
 import layers.modules as modules
+import layers.suffix as suffix
 
 ##### CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
 
@@ -26,3 +26,11 @@ class BaseModel(nn.Module):
             last_layer_features = next_layer_features
 
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
+
+        self.suffix = suffix.AverageSuffix()
+
+    def forward(self, x):
+        for block in self.reg_blocks:
+            x = block(x)
+        x = self.suffix(x)
+        return x
