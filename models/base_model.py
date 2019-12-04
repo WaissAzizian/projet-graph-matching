@@ -3,6 +3,10 @@ import torch.nn as nn
 import layers.modules as modules
 import layers.suffix as suffix
 
+###
+
+
+
 ##### CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
 
 class BaseModel(nn.Module):
@@ -13,7 +17,6 @@ class BaseModel(nn.Module):
         super().__init__()
 
         self.config = config
-        use_new_suffix = config.architecture.new_suffix  # True or False
         block_features = config.architecture.block_features  # List of number of features in each regular block
         original_features_num = config.node_labels + 1  # Number of features of the input
 
@@ -30,7 +33,13 @@ class BaseModel(nn.Module):
         self.suffix = suffix.AverageSuffix()
 
     def forward(self, x):
+        #here x.shape = (bs, n_vertices, n_vertices, n_features)
+        x = x.permute(0, 3, 1, 2)
+        #expects x.shape = (bs, n_features, n_vertices, n_vertices)
         for block in self.reg_blocks:
             x = block(x)
         x = self.suffix(x)
+        # here x.shape = (bs, n_features, n_vertices)
+        x = x.permute(0, 2, 1)
+        # here x.shape = (bs,n_vertices, n_features)
         return x
