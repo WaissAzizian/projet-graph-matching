@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.utils
 
 class Generator(object):
-    def __init__(self, path_dataset):
-        self.path_dataset = path_dataset
+    def __init__(self):
+        self.path_dataset = 'dataset'
         self.num_examples_train = 10e6
         self.num_examples_test = 10e4
         self.data_train = []
@@ -18,6 +18,11 @@ class Generator(object):
         self.random_noise = False
         self.noise = 0.03
         self.noise_model = 2
+
+    def set_args(self, args):
+        for key in args.keys():
+            if hasattr(self, key):
+                self.__setattr__(key, args[key])
 
     def ErdosRenyi(self, p, N):
         W = np.zeros((N, N))
@@ -102,8 +107,9 @@ class Generator(object):
             print('Reading training dataset at {}'.format(path))
             with open(path, 'rb') as f:
                 self.data_train = np.load(f, allow_pickle=True)
-        else:
+        if len(self.data_train) == 0 or len(self.data_train) != self.num_examples_train:
             print('Creating training dataset.')
+            self.data_train = []
             self.create_dataset_train()
             print('Saving training datatset at {}'.format(path))
             with open(path, 'wb') as f:
@@ -119,8 +125,9 @@ class Generator(object):
             print('Reading testing dataset at {}'.format(path))
             with open(path, 'rb') as f:
                 self.data_test = np.load(f, allow_pickle=True)
-        else:
+        if len(self.data_test) == 0 or len(self.data_test) != self.num_examples_test:
             print('Creating testing dataset.')
+            self.data_test = []
             self.create_dataset_test()
             print('Saving testing datatset at {}'.format(path))
             with open(path, 'wb') as f:
@@ -141,7 +148,7 @@ class Generator(object):
     def train_loader(self, batch_size):
         assert len(self.data_train) > 0
         torch_data_train = torch.Tensor(self.data_train)
-        return torch.utils.data.DataLoader(torch_data_train, batch_size=batch_size, shuffle=True, num_workers=4)
+        return torch.utils.data.DataLoader(torch_data_train, batch_size=batch_size, shuffle=True, num_workers=1)
     
     def test_loader(self, batch_size):
         assert len(self.data_test) > 0

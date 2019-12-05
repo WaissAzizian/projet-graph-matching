@@ -3,7 +3,7 @@ import data_generator
 
 class Test(unittest.TestCase):
     def test_dim(self):
-        gen = data_generator.Generator('dataset')
+        gen = data_generator.Generator()
         gen.num_examples_train = 5
         gen.num_examples_test = 5
         gen.load_dataset()

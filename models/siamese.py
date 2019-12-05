@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class Siamese(nn.Module):
-    def __init__(module: nn.Module):
+    def __init__(self, module: nn.Module):
         super(Siamese, self).__init__()
         self.gnn = module
 
