@@ -55,7 +55,7 @@ parser.add_argument('--generative_model', nargs='?', const=1, type=str,
                     default='ErdosRenyi')
 parser.add_argument('--epoch', nargs='?', const=1, type=int,
                     default=5)
-parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
+parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=8)
 parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
 parser.add_argument('--path_dataset', nargs='?', const=1, type=str, default='dataset')
 parser.add_argument('--path_logger', nargs='?', const=1, type=str, default='logger')
@@ -110,6 +110,7 @@ template2 = '{:<10} {:<10} {:<10.5f} {:<10.5f} {:<15} {:<10} {:<10} {:<10.3f} \n
 
 def compute_loss(pred, labels):
     pred = pred.view(-1, pred.size()[-1])
+    labels = torch.flatten(labels)
     labels = labels.view(-1)
     return criterion(pred, labels)
 
@@ -123,13 +124,13 @@ def train(siamese_gnn, logger, gen):
         for it, sample in enumerate(dataloader):
             sample = sample.to(device)
             pred = siamese_gnn(sample[:, 0], sample[:, 1])
-            loss = compute_loss(pred, labels)
+            loss = compute_loss(pred, labels[: len(pred)])
             siamese_gnn.zero_grad()
             loss.backward()
             #nn.utils.clip_grad_norm(siamese_gnn.parameters(), args.clip_grad_norm)
             optimizer.step()
             logger.add_train_loss(loss)
-            logger.add_train_accuracy(pred, labels)
+            logger.add_train_accuracy(pred, labels[: len(pred)])
             elapsed = time.time() - start
             if it % logger.args['print_freq'] == 0:
                 logger.plot_train_accuracy()
@@ -154,7 +155,7 @@ def test(siamese_gnn, logger, gen):
     for it, sample in enumerate(dataloader):
         sample = sample.to(device)
         pred = siamese_gnn(sample[:, 0], sample[:, 1])
-        logger.add_test_accuracy(pred, labels)
+        logger.add_test_accuracy(pred, labels[: len(pred)])
     accuracy = sum(logger.accuracy_test)/len(logger.accuracy_test)
     print('Accuracy: ', accuracy)
     return accuracy
@@ -181,4 +182,4 @@ if __name__ == '__main__':
         train(siamese_gnn, logger, gen)
         siamese_gnn = logger.load_model()
         acc = test(siamese_gnn, logger, gen)
-        experiment.save(args, acc)
+        experiment.save_experiment(args, acc)

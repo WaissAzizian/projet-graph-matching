@@ -22,7 +22,7 @@ else:
     torch.manual_seed(0)
 
 def compute_recovery_rate(pred, labels):
-    pred = pred.max(2)[1]
+    pred = pred.max(-1)[1]
     error = 1 - torch.eq(pred, labels).type(dtype)#.squeeze(2)
     frob_norm = error.mean(1)#.squeeze(1)
     accuracy = 1 - frob_norm
@@ -65,7 +65,7 @@ class Logger(object):
         torch.save(model, path)
         print('Model Saved.')
 
-    def load_model(self):                                                 
+    def load_model(self):
         load_dir = os.path.join(self.path, 'parameters/')
         # check if any training has been done before.
         try:
@@ -101,7 +101,7 @@ class Logger(object):
         plt.ylabel('Cross Entropy Loss')
         plt.title('Training Loss: p={}, p_e={}'
                   .format(self.args['edge_density'], self.args['noise']))
-        path = os.path.join(self.path_dir, 'training_loss.png') 
+        path = os.path.join(self.path_dir, 'training_loss.png')
         plt.savefig(path)
 
     def plot_test_loss(self):
@@ -114,7 +114,7 @@ class Logger(object):
         plt.ylabel('Cross Entropy Loss')
         plt.title('Testing Loss: p={}, p_e={}'
                   .format(self.args['edge_density'], self.args['noise']))
-        path = os.path.join(self.path_dir, 'testing_loss.png') 
+        path = os.path.join(self.path_dir, 'testing_loss.png')
         plt.savefig(path)
 
     def plot_train_accuracy(self):
@@ -126,7 +126,7 @@ class Logger(object):
         plt.ylabel('Accuracy')
         plt.title('Training Accuracy: p={}, p_e={}'
                   .format(self.args['edge_density'], self.args['noise']))
-        path = os.path.join(self.path_dir, 'training_accuracy.png') 
+        path = os.path.join(self.path_dir, 'training_accuracy.png')
         plt.savefig(path)
 
     def plot_test_accuracy(self):
@@ -139,7 +139,7 @@ class Logger(object):
         plt.ylabel('Accuracy')
         plt.title('Testing Accuracy: p={}, p_e={}'
                   .format(self.args['edge_density'], self.args['noise']))
-        path = os.path.join(self.path_dir, 'testing_accuracy.png') 
+        path = os.path.join(self.path_dir, 'testing_accuracy.png')
         plt.savefig(path)
 
     def save_results(self):
@@ -147,4 +147,3 @@ class Logger(object):
         np.savez(path, accuracy_train=np.array(self.accuracy_train),
                  accuracy_test=np.array(self.accuracy_test),
                  loss_train=self.loss_train, loss_test=self.loss_test)
-
