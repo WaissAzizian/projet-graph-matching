@@ -29,6 +29,7 @@ project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)
 sys.path.append(project_dir)
 os.chdir(project_dir)
 
+import experiment
 import config
 import models.siamese as siamese
 import models.base_model as base_model
@@ -46,6 +47,7 @@ parser.add_argument('--num_examples_test', nargs='?', const=1, type=int,
                     default=int(1000))
 parser.add_argument('--edge_density', nargs='?', const=1, type=float,
                     default=0.2)
+parser.add_argument('--n_vertices', nargs='?', const=1, type=int, default=50)
 parser.add_argument('--random_noise', action='store_true')
 parser.add_argument('--noise', nargs='?', const=1, type=float, default=0.03)
 parser.add_argument('--noise_model', nargs='?', const=1, type=int, default=2)
@@ -57,6 +59,7 @@ parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=1)
 parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
 parser.add_argument('--path_dataset', nargs='?', const=1, type=str, default='dataset')
 parser.add_argument('--path_logger', nargs='?', const=1, type=str, default='logger')
+parser.add_argument('--path_exp', nargs='?', const=1, type=str, default='experiments/logs.json')
 parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=100)
 parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
 parser.add_argument('--save_freq', nargs='?', const=1, type=int, default=2000)
@@ -154,6 +157,7 @@ def test(siamese_gnn, logger, gen):
         logger.add_test_accuracy(pred, labels)
     accuracy = sum(logger.accuracy_test)/len(logger.accuracy_test)
     print('Accuracy: ', accuracy)
+    return accuracy
 
 def setup():
     logger = Logger(args.path_logger)
@@ -173,3 +177,8 @@ if __name__ == '__main__':
     if args.mode == 'test':
         siamese_gnn = logger.load_model()
         test(siamese_gnn, logger, gen)
+    if args.mode == 'experiment':
+        train(siamese_gnn, logger, gen)
+        siamese_gnn = logger.load_model()
+        acc = test(siamese_gnn, logger, gen)
+        experiment.save(args, acc)
