@@ -111,6 +111,7 @@ def compute_loss(pred, labels):
     return criterion(pred, labels)
 
 def train(siamese_gnn, logger, gen):
+    siamese_gnn.train()
     labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
     optimizer = torch.optim.Adamax(siamese_gnn.parameters(), lr=1e-3)
     dataloader = gen.train_loader(args.batch_size)
@@ -141,6 +142,18 @@ def train(siamese_gnn, logger, gen):
                 logger.save_model(siamese_gnn)
                 logger.save_results()
     print('Optimization finished.')
+    logger.save_model(siamese_gnn)
+
+def test(siamese_gnn, logger, gen):
+    siamese_gnn.eval()
+    labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
+    dataloader = gen.test_loader(args.batch_size)
+    for it, sample in enumerate(dataloader):
+        sample = sample.to(device)
+        pred = siamese_gnn(sample[:, 0], sample[:, 1])
+        logger.add_test_accuracy(pred, labels)
+    accuracy = sum(logger.accuracy_test)/len(logger.accuracy_test)
+    print('Accuracy: ', accuracy)
 
 def setup():
     logger = Logger(args.path_logger)
@@ -157,3 +170,6 @@ if __name__ == '__main__':
     siamese_gnn, logger, gen = setup()
     if args.mode == 'train':
         train(siamese_gnn, logger, gen)
+    if args.mode == 'test':
+        siamese_gnn = logger.load_model()
+        test(siamese_gnn, logger, gen)
