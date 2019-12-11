@@ -10,11 +10,15 @@ quick_test:
 	python3 train/train.py --num_examples_test 100 --mode test
 
 quick_experiment:
-	python3 train/train.py --expressive_suffix True --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment
+	python3 train/train.py --expressive_suffix True --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment --lr 0.0001
 
-make_experiments:
-	python3 train/train.py --expressive_suffix True  --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment
-	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment
+experiments:
+	#python3 train/train.py --expressive_suffix True  --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment
+	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment --num_features 100
+	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment --num_layers 50
+	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment --num_blocks 6
+	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 10 --mode experiment
+	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment --lr 0.0001
 
 clean:
 	rm -rf dataset/*
@@ -43,4 +47,3 @@ list:
 pull_git:
 	git fetch --all
 	git reset --hard origin/master
-
