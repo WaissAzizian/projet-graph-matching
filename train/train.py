@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/pytho
 # -*- coding: UTF-8 -*-
 
 import numpy as np
@@ -55,7 +55,7 @@ parser.add_argument('--generative_model', nargs='?', const=1, type=str,
                     default='ErdosRenyi')
 parser.add_argument('--epoch', nargs='?', const=1, type=int,
                     default=5)
-parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=8)
+parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=32)
 parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
 parser.add_argument('--path_dataset', nargs='?', const=1, type=str, default='dataset')
 parser.add_argument('--path_logger', nargs='?', const=1, type=str, default='logger')
@@ -182,7 +182,10 @@ if __name__ == '__main__':
         siamese_gnn = logger.load_model()
         test(siamese_gnn, logger, gen)
     if args.mode == 'experiment':
+        start = time.time()
         train(siamese_gnn, logger, gen)
         siamese_gnn = logger.load_model()
         acc = test(siamese_gnn, logger, gen)
-        experiment.save_experiment(args, acc)
+        end = time.time()
+        delta = end - start
+        experiment.save_experiment(args, acc, delta)

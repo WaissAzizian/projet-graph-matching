@@ -10,7 +10,11 @@ quick_test:
 	python3 train/train.py --num_examples_test 100 --mode test
 
 quick_experiment:
-	python3 train/train.py --expressive_suffix True --num_examples_train 1000 --num_examples_test 200 --print_freq 100 --epoch 5 --mode experiment
+	python3 train/train.py --expressive_suffix True --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment
+
+make_experiments:
+	python3 train/train.py --expressive_suffix True  --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment
+	python3 train/train.py --expressive_suffix False --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment
 
 clean:
 	rm -rf dataset/*
@@ -27,7 +31,7 @@ start:
 stop:
 	gcloud compute instances stop $(INSTANCE)
 
-deploy: test
+deploy:
 	rsync ssh -Pavur "$(PWD)" "$(HOST)":/home/waissfowl/
 
 connect:
