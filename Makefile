@@ -31,12 +31,16 @@ start:
 stop:
 	gcloud compute instances stop $(INSTANCE)
 
-deploy:
-	rsync ssh -Pavur "$(PWD)" "$(HOST)":/home/waissfowl/
+fetch_results:
+	rsync -Pavu "$(HOST)":/home/$(GUSER)/projet-graph-matching/experiments/ "$(PWD)"/experiments/
 
 connect:
 	ssh $(HOST)
 
 list:
 	gcloud compute instances list
+
+pull_git:
+	git fetch --all
+	git reset --hard origin/master
 
