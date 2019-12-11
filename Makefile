@@ -16,7 +16,9 @@ clean:
 	rm -rf dataset/*
 
 INSTANCE=pytorch-instance-p4
-HOST=pytorch-instance-p4.us-west2-c.graph-dl
+PROJECT=homework-nlp
+ZONE=us-west2-c
+HOST=$(INSTANCE).$(ZONE).$(PROJECT)
 
 start:
 	gcloud compute instances start $(INSTANCE)
