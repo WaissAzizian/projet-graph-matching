@@ -72,6 +72,8 @@ parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float,
 
 parser.add_argument('--num_features', nargs='?', const=1, type=int,
                     default=20)
+parser.add_argument('--expressive_suffix', nargs='?', const=1, type=bool,
+                    default=False)
 parser.add_argument('--num_layers', nargs='?', const=1, type=int,
                     default=20)
 parser.add_argument('--num_blocks', nargs='?', const=1, type=int,
@@ -95,6 +97,7 @@ def make_config(args):
     arch = {
             'depth_of_mlp' : args.num_layers,
             'block_features' : [args.num_features] * args.num_blocks,
+            'expressive_suffix' : args.expressive_suffix,
             }
     conf = {
             'node_labels' : 1,
