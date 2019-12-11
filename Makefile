@@ -14,3 +14,19 @@ quick_experiment:
 
 clean:
 	rm -rf dataset/*
+
+INSTANCE=pytorch-instance-p4
+HOST=pytorch-instance-p4.us-west2-c.graph-dl
+
+start:
+	gcloud compute instances start $(INSTANCE)
+	gcloud compute config-ssh
+
+stop:
+	gcloud compute instances stop $(INSTANCE)
+
+deploy: test
+	rsync ssh -Pavur "$(PWD)" "$(HOST)":/home/waissfowl/
+
+connect:
+	ssh $(HOST)
