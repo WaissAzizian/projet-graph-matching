@@ -4,6 +4,7 @@ import networkx
 import torch
 import torch.nn as nn
 import torch.utils
+import torch_geometric as geometric
 
 class Generator(object):
     def __init__(self):
@@ -157,4 +158,22 @@ class Generator(object):
 
 
 
-
+def classification_dataloader(args):
+    def adjacency_to_tensor(ex):
+        W = ex.adj
+        degrees = W.sum(1)
+        n = len(W)
+        B = torch.zeros((n,n,2))
+        B[:, :, 1] = W
+        indices = torch.arange(n)
+        B[indices, indices, 0] = degrees
+        return (B, ex.y)
+    dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.compose([
+            geometric.transforms.ToDense(),
+            adjacency_to_tensor,
+        ]))
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [args.num_examples_train, args.num_examples_test])
+    train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    return train_dl, test_dl
+        
