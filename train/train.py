@@ -75,6 +75,8 @@ parser.add_argument('--num_features', nargs='?', const=1, type=int,
                     default=20)
 parser.add_argument('--expressive_suffix', nargs='?', const=1, type=bool,
                     default=False)
+parser.add_argument('--classification', nargs= '?', const=1, type=bool,
+                    default=False)
 parser.add_argument('--num_layers', nargs='?', const=1, type=int,
                     default=20)
 parser.add_argument('--num_blocks', nargs='?', const=1, type=int,
@@ -175,7 +177,7 @@ def setup():
     gen.load_dataset()
     return siamese_gnn, logger, gen
 
-if __name__ == '__main__':
+def make_qap():
     siamese_gnn, logger, gen = setup()
     if args.mode == 'train':
         train(siamese_gnn, logger, gen, args.lr)
@@ -190,3 +192,68 @@ if __name__ == '__main__':
         end = time.time()
         delta = end - start
         experiment.save_experiment(args, acc, delta)
+
+###############################################################################
+#                                Classification                               #
+###############################################################################
+
+def classification_setup():
+    logger = Logger(args.path_logger)
+    logger.write_settings(args)
+    config = make_config(args)
+    model = base_model.BaseModel(config)
+    dataloaders = classification_dataloader(args)
+    return model, logger, dataloaders
+
+def classification_train(model, logger, dataloader, lr):
+    model.train()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    start = time.time()
+    for epoch in range(args.epoch):
+        for it, (sample, label) in enumerate(dataloader):
+            sample = sample.to(device)
+            pred = model(sample)
+            loss = criterion(pred, label)
+            model.zero_grad()
+            loss.backward()
+            optimizer.step()
+            logger.add_train_loss(loss)
+            accuracy = ((label - pred.max(-1)[1])**2).mean()
+            elapsed = time.time() - start
+            if it % logger.args['print_freq'] == 0:
+                loss = loss.data.cpu().numpy()#[0]
+                info = ['epoch', 'iteration', 'loss', 'accuracy', 'elapsed']
+                out = [epoch, it, loss.item(), logger.accuracy_train[-1].item(), elapsed]
+                print(template1.format(*info))
+                print(template2.format(*out))
+    print('Optimization finished.')
+
+def classification_test(model, logger, dataloader):
+    model.eval()
+    acc = 0
+    for it, (sample, label) in enumerate(dataloader):
+        sample = sample.to(device)
+        pred = model(sample)
+        accuracy = ((label - pred.max(-1)[1])**2).mean().cpu()
+        acc += accuracy
+    return acc/(it+1)
+
+def make_classification():
+    start = time.time()
+    model, logger, dataloaders = classification_setup()
+    classification_train(model, logger, dataloaders[0], args.lr)
+    acc = classification_test(model, logger, dataloaders[1])
+    end = time.time()
+    delta = end - start
+    experiment.save_experiment(args, acc, delta)
+
+
+###############################################################################
+#                                   Main                                      #
+###############################################################################
+
+if __name__ == '__main__':
+    if args.classification:
+        make_classification()
+    else:
+        make_qap()

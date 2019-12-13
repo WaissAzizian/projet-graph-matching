@@ -30,11 +30,13 @@ class BaseModel(nn.Module):
 
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
 
-        if config.architecture.expressive_suffix:
-            self.suffix = suffix.EquivariantSuffix(last_layer_features, last_layer_features)
+        if config.classification:
+            self.suffix = suffix.AverageSuffixClassification()
         else:
-            self.suffix = suffix.AverageSuffix()
-
+            if config.architecture.expressive_suffix:
+                self.suffix = suffix.EquivariantSuffix(last_layer_features, last_layer_features)
+            else:
+                self.suffix = suffix.AverageSuffix()
 
     def forward(self, x):
         #here x.shape = (bs, n_vertices, n_vertices, n_features)

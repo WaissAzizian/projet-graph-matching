@@ -55,3 +55,12 @@ class EquivariantSuffix(nn.Module):
         x = self.linear(x)
         x = x.view(N, m, -1).permute(0, 2, 1)
         return x
+
+class AverageSuffixClassification(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        # in: N x d x m x m
+        # out: N x d
+        return torch.mean(x, (2, 3))
