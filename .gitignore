@@ -1,6 +1,9 @@
 #Custom
-/dataset/*
-/logger/*
+*.np
+*.txt
+*.npz
+*.png
+*.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
