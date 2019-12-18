@@ -1,4 +1,4 @@
-pip install torch-sparse
-pip install torch-geometric
-pip install torch-scatter
-pip install torch-cluster
+pip install torch-sparse --user
+pip install torch-geometric --user
+pip install torch-scatter --user
+pip install torch-cluster --user

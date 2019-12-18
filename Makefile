@@ -26,6 +26,9 @@ clean:
 quick_classification:
 	python3 train/train.py --num_examples_train 100 --num_examples_test 900 --classification --print_freq 100 --epoch 1 --num_features 2
 
+classification_experiment:
+	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --print_freq 10 --epoch 10 --num_features 2
+
 INSTANCE=pytorch-instance-p4
 PROJECT=homework-nlp
 ZONE=us-west2-c

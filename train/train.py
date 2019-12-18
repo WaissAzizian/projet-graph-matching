@@ -202,7 +202,7 @@ def classification_setup():
     logger = Logger(args.path_logger)
     logger.write_settings(args)
     config = make_config(args)
-    model = base_model.BaseModel(config)
+    model = base_model.BaseModel(config).to(device)
     dataloaders = classification_dataloader(args)
     return model, logger, dataloaders
 
@@ -213,6 +213,7 @@ def classification_train(model, logger, dataloader, lr):
     for epoch in range(args.epoch):
         for it, (sample, label) in enumerate(dataloader):
             sample = sample.to(device)
+            label = label.to(device)
             pred = model(sample)
             loss = criterion(pred, label)
             model.zero_grad()
@@ -234,6 +235,7 @@ def classification_test(model, logger, dataloader):
     acc = 0
     for it, (sample, label) in enumerate(dataloader):
         sample = sample.to(device)
+        label = label.to(device)
         pred = model(sample)
         accuracy = ((label - pred.max(-1)[1])**2).float().mean().item()
         acc += accuracy
