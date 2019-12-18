@@ -219,14 +219,14 @@ def classification_train(model, logger, dataloader, lr):
             loss.backward()
             optimizer.step()
             logger.add_train_loss(loss)
-            accuracy = ((label - pred.max(-1)[1])**2).mean()
+            accuracy = ((label - pred.max(-1)[1])**2).float().mean()
             elapsed = time.time() - start
             if it % logger.args['print_freq'] == 0:
                 loss = loss.data.cpu().numpy()#[0]
                 info = ['epoch', 'iteration', 'loss', 'accuracy', 'elapsed']
-                out = [epoch, it, loss.item(), logger.accuracy_train[-1].item(), elapsed]
-                print(template1.format(*info))
-                print(template2.format(*out))
+                out = [epoch, it, loss.item(), accuracy.item(), elapsed]
+                print(("{:<10} "*5).format(*info))
+                print(("{:<10} "*2 + "{:<10.5f} "*2 + "{:<10.3f}").format(*out))
     print('Optimization finished.')
 
 def classification_test(model, logger, dataloader):
@@ -235,7 +235,7 @@ def classification_test(model, logger, dataloader):
     for it, (sample, label) in enumerate(dataloader):
         sample = sample.to(device)
         pred = model(sample)
-        accuracy = ((label - pred.max(-1)[1])**2).mean().cpu()
+        accuracy = ((label - pred.max(-1)[1])**2).float().mean().cpu()
         acc += accuracy
     return acc/(it+1)
 
