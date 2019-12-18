@@ -33,7 +33,7 @@ import experiment
 import config
 import models.siamese as siamese
 import models.base_model as base_model
-from data_generator import Generator
+from data_generator import Generator, classification_dataloader
 from Logger import Logger
 parser = argparse.ArgumentParser()
 
@@ -104,6 +104,7 @@ def make_config(args):
             }
     conf = {
             'node_labels' : 1,
+            'classification': args.classification,
             }
     return config.Configuration(conf, arch)
 

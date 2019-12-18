@@ -156,10 +156,12 @@ class Generator(object):
         torch_data_test = torch.Tensor(self.data_test)
         return torch.utils.data.DataLoader(torch_data_test, batch_size=batch_size, shuffle=True, num_workers=4)
 
+#adjacency matrix to tensor transform
+class Adjacency_to_tensor:
+    def __init__(self):
+        pass
 
-
-def classification_dataloader(args):
-    def adjacency_to_tensor(ex):
+    def __call__(self, ex):
         W = ex.adj
         degrees = W.sum(1)
         n = len(W)
@@ -167,10 +169,16 @@ def classification_dataloader(args):
         B[:, :, 1] = W
         indices = torch.arange(n)
         B[indices, indices, 0] = degrees
-        return (B, ex.y)
-    dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.compose([
-            geometric.transforms.ToDense(),
-            adjacency_to_tensor,
+        return (B, ex.y[0])
+
+    def __repr__(self):
+        return 'Adjacency_to_tensor'
+
+def classification_dataloader(args):
+    MAX_NUM_NODES=136 #for IMDB-BINARY dataset
+    dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.Compose([
+            geometric.transforms.ToDense(num_nodes=MAX_NUM_NODES),
+            Adjacency_to_tensor(),
         ]))
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [args.num_examples_train, args.num_examples_test])
     train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
