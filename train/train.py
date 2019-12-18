@@ -235,7 +235,7 @@ def classification_test(model, logger, dataloader):
     for it, (sample, label) in enumerate(dataloader):
         sample = sample.to(device)
         pred = model(sample)
-        accuracy = ((label - pred.max(-1)[1])**2).float().mean().cpu()
+        accuracy = ((label - pred.max(-1)[1])**2).float().mean().item()
         acc += accuracy
     return acc/(it+1)
 

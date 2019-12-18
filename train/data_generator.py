@@ -181,7 +181,7 @@ def classification_dataloader(args):
             Adjacency_to_tensor(),
         ]))
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [args.num_examples_train, args.num_examples_test])
-    train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+    test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     return train_dl, test_dl
         
