@@ -29,6 +29,7 @@ class BaseModel(nn.Module):
             last_layer_features = next_layer_features
 
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
+        self.classification = config.classification
 
         if config.classification:
             self.suffix = suffix.AverageSuffixClassification()
@@ -45,7 +46,9 @@ class BaseModel(nn.Module):
         for block in self.reg_blocks:
             x = block(x)
         x = self.suffix(x)
-        # here x.shape = (bs, n_features, n_vertices)
-        x = x.permute(0, 2, 1)
-        # here x.shape = (bs,n_vertices, n_features)
+        if not self.classification:
+            assert len(x.size()) == 3
+            # here x.shape = (bs, n_features, n_vertices)
+            x = x.permute(0, 2, 1)
+            # here x.shape = (bs,n_vertices, n_features)
         return x
