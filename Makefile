@@ -27,9 +27,7 @@ quick_classification:
 	python3 train/train.py --num_examples_train 100 --num_examples_test 900 --classification --print_freq 100 --epoch 1 --num_features 2
 
 classification_experiment:
-	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --epoch 10 --num_features 2 --num_blocks 3 --num_layers 10 --lr 0.01
-	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --epoch 10 --num_features 2 --num_blocks 3 --num_layers 10 --lr 0.005
-	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --epoch 10 --num_features 2 --num_blocks 3 --num_layers 10 --lr 0.001
+	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --epoch 50 --num_features 2 --num_blocks 3 --num_layers 10 --lr 0.001
 
 INSTANCE=pytorch-instance-p4
 PROJECT=homework-nlp
