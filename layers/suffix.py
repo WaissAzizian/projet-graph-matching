@@ -64,3 +64,17 @@ class AverageSuffixClassification(nn.Module):
         # in: N x d x m x m
         # out: N x d
         return torch.mean(x, (2, 3))
+
+class MLPSuffixClassification(nn.Module):
+    def __init__(self, d_in, d_h, d_out):
+        super().__init__()
+        self.net = nn.Sequential(
+                nn.Linear(d_in, d_h),
+                nn.ReLU(),
+                nn.Linear(d_h, d_out),
+                )
+
+    def forward(self, x):
+        # in: N x d_in x m x m
+        # out: N x d_out
+        return self.net(torch.mean(x, (2, 3)))

@@ -32,7 +32,7 @@ class BaseModel(nn.Module):
         self.classification = config.classification
 
         if config.classification:
-            self.suffix = suffix.AverageSuffixClassification()
+            self.suffix = suffix.MLPSuffixClassification(config.architecture.block_features[-1], 32, 2)
         else:
             if config.architecture.expressive_suffix:
                 self.suffix = suffix.EquivariantSuffix(last_layer_features, last_layer_features)
