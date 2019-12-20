@@ -84,7 +84,7 @@ class MaxSuffixClassification(nn.Module):
         m = x.size(-1)
         max_diag = torch.max(torch.diagonal(x, dim1=-2, dim2=-1), -1)[0]
         indices = torch.arange(m)
-        x[:, :, indices, indices] = float('-inf') * torch.ones(m)
+        x[:, :, indices, indices] = float('-inf') * torch.ones(m).to(x.get_device())
         max_off = torch.max(torch.max(x, -1)[0], -1)[0]
         #return torch.mean(x, (2, 3))
         return torch.cat((max_diag, max_off), -1)

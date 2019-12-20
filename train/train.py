@@ -33,7 +33,6 @@ import experiment
 import config
 import models.siamese as siamese
 import models.base_model as base_model
-import old.base_model as old_base_model
 from data_generator import Generator, classification_dataloader
 from Logger import Logger
 parser = argparse.ArgumentParser()
