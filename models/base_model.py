@@ -32,7 +32,11 @@ class BaseModel(nn.Module):
         self.classification = config.classification
 
         if config.classification:
-            self.suffix = suffix.AverageSuffixClassification()
+            self.suffix = suffix.MaxSuffixClassification()
+            self.fc_layers = nn.ModuleList()
+            self.fc_layers.append(modules.FullyConnected(2*block_features[-1], 512))
+            self.fc_layers.append(modules.FullyConnected(512, 256))
+            self.fc_layers.append(modules.FullyConnected(256, 2, activation_fn=None))
         else:
             if config.architecture.expressive_suffix:
                 self.suffix = suffix.EquivariantSuffix(last_layer_features, last_layer_features)
@@ -51,4 +55,7 @@ class BaseModel(nn.Module):
             # here x.shape = (bs, n_features, n_vertices)
             x = x.permute(0, 2, 1)
             # here x.shape = (bs,n_vertices, n_features)
+        else:
+            for l in self.fc_layers:
+                x = l(x)
         return x

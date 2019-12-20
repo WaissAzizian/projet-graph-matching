@@ -33,6 +33,7 @@ import experiment
 import config
 import models.siamese as siamese
 import models.base_model as base_model
+import old.base_model as old_base_model
 from data_generator import Generator, classification_dataloader
 from Logger import Logger
 parser = argparse.ArgumentParser()
@@ -224,7 +225,7 @@ def classification_train(model, logger, dataloader, lr):
             loss.backward()
             optimizer.step()
             logger.add_train_loss(loss)
-            accuracy = ((label - pred.max(-1)[1])**2).float().mean()
+            accuracy = ((label == pred.max(-1)[1])).float().mean()
             elapsed = time.time() - start
             if it % logger.args['print_freq'] == 0:
                 loss = loss.data.cpu().numpy()#[0]
@@ -232,10 +233,6 @@ def classification_train(model, logger, dataloader, lr):
                 out = [epoch, it, loss.item(), accuracy.item(), elapsed]
                 print(("{:<10} "*5).format(*info))
                 print(("{:<10} "*2 + "{:<10.5f} "*2 + "{:<10.3f}").format(*out))
-        n, p = list(model.named_parameters())[-3]
-        assert p.requires_grad
-        print(n, p.data)
-        print(p.grad.data)
     print('Optimization finished.')
 
 def classification_test(model, logger, dataloader):
@@ -245,7 +242,7 @@ def classification_test(model, logger, dataloader):
         sample = sample.to(device)
         label = label.to(device)
         pred = model(sample)
-        accuracy = ((label - pred.max(-1)[1])**2).float().mean().item()
+        accuracy = ((label == pred.max(-1)[1])).float().mean().item()
         acc += accuracy
     return acc/(it+1)
 

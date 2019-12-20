@@ -20,12 +20,8 @@ class RegularBlock(nn.Module):
     def forward(self, inputs):
         mlp1 = self.mlp1(inputs)
         mlp2 = self.mlp2(inputs)
-        print(inputs[0, :, :5, :5])
-        #mult = torch.matmul(mlp1, mlp2)
-        #print(inputs.size())
-        #print(mlp2.size())
-        out = torch.cat((inputs, mlp2), dim=1)
-        #print(out.size())
+        mult = torch.matmul(mlp1, mlp2)
+        out = torch.cat((inputs, mult), dim=1)
         out = self.skip(out)
         return out
 

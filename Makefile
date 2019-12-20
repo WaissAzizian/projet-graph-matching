@@ -13,7 +13,7 @@ quick_experiment:
 	python3 train/train.py --expressive_suffix True --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment --lr 0.0001
 
 overfit:
-	python3 train/train.py --expressive_suffix False --num_examples_train 5 --num_examples_test 995 --print_freq 1000 --epoch 20 --lr 1	--overfit --classification --num_layers 2 --num_features 2 --num_blocks 1
+	python3 train/train.py --expressive_suffix False --num_examples_train 5 --num_examples_test 995 --print_freq 1000 --epoch 50 --lr 0.01 --overfit --classification --num_layers 2 --num_features 2 --num_blocks 1
 
 experiments:
 	#python3 train/train.py --expressive_suffix True  --num_examples_train 20000 --num_examples_test 1000 --print_freq 1000 --epoch 5 --mode experiment
@@ -27,7 +27,7 @@ clean:
 	rm -rf dataset/*
 
 quick_classification:
-	python3 train/train.py --num_examples_train 100 --num_examples_test 900 --classification --print_freq 100 --epoch 1 --num_features 2
+	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --print_freq 100 --epoch 5 --num_features 2 --num_layers 2 --num_blocks 1 --lr 0.01
 
 classification_experiment:
 	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --epoch 50 --num_features 2 --num_blocks 3 --num_layers 10 --lr 0.001

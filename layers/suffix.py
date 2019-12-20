@@ -63,6 +63,28 @@ class AverageSuffixClassification(nn.Module):
 
     def forward(self, x):
         # in: N x d x m x m
-        # out: N x d
-        #return self.linear(torch.mean(x, (2, 3)))
-        return torch.mean(x, (2, 3))
+        # out: N x 2d
+        m = x.size(-1)
+        sum_diag = torch.sum(torch.diagonal(x, dim1=-2, dim2=-1), -1)
+        sum_all = torch.sum(x, (2, 3))
+        sum_off = sum_all - sum_diag
+        mean_diag = sum_diag/m
+        mean_off = sum_off/(m**2 - m)
+        #return torch.mean(x, (2, 3))
+        return torch.cat((mean_diag, mean_off), -1)
+
+class MaxSuffixClassification(nn.Module):
+    def __init__(self):
+        super().__init__()
+        #self.linear = nn.Linear(2, 2, bias=False)
+
+    def forward(self, x):
+        # in: N x d x m x m
+        # out: N x 2d
+        m = x.size(-1)
+        max_diag = torch.max(torch.diagonal(x, dim1=-2, dim2=-1), -1)[0]
+        indices = torch.arange(m)
+        x[:, :, indices, indices] = float('-inf') * torch.ones(m)
+        max_off = torch.max(torch.max(x, -1)[0], -1)[0]
+        #return torch.mean(x, (2, 3))
+        return torch.cat((max_diag, max_off), -1)
