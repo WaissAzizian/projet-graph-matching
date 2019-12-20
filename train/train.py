@@ -77,6 +77,8 @@ parser.add_argument('--expressive_suffix', nargs='?', const=1, type=bool,
                     default=False)
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
+parser.add_argument('--overfit', nargs= '?', const=1, type=bool,
+                    default=False)
 parser.add_argument('--num_layers', nargs='?', const=1, type=int,
                     default=20)
 parser.add_argument('--num_blocks', nargs='?', const=1, type=int,
@@ -212,11 +214,13 @@ def classification_train(model, logger, dataloader, lr):
     start = time.time()
     for epoch in range(args.epoch):
         for it, (sample, label) in enumerate(dataloader):
+            model.zero_grad()
             sample = sample.to(device)
             label = label.to(device)
             pred = model(sample)
             loss = criterion(pred, label)
-            model.zero_grad()
+            #print('label: ', label)
+            #print('pred: ', pred)
             loss.backward()
             optimizer.step()
             logger.add_train_loss(loss)
@@ -228,6 +232,10 @@ def classification_train(model, logger, dataloader, lr):
                 out = [epoch, it, loss.item(), accuracy.item(), elapsed]
                 print(("{:<10} "*5).format(*info))
                 print(("{:<10} "*2 + "{:<10.5f} "*2 + "{:<10.3f}").format(*out))
+        n, p = list(model.named_parameters())[-3]
+        assert p.requires_grad
+        print(n, p.data)
+        print(p.grad.data)
     print('Optimization finished.')
 
 def classification_test(model, logger, dataloader):
@@ -242,11 +250,16 @@ def classification_test(model, logger, dataloader):
     return acc/(it+1)
 
 def make_classification():
+    print(args)
     start = time.time()
     model, logger, dataloaders = classification_setup()
     classification_train(model, logger, dataloaders[0], args.lr)
-    acc = classification_test(model, logger, dataloaders[1])
+    if args.overfit:
+        acc = classification_test(model, logger, dataloaders[0])
+    else:
+        acc = classification_test(model, logger, dataloaders[1])
     end = time.time()
+    print('accuracy: ', acc)
     delta = end - start
     experiment.save_experiment(args, acc, delta)
 

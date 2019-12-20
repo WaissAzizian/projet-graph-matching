@@ -20,10 +20,13 @@ class RegularBlock(nn.Module):
     def forward(self, inputs):
         mlp1 = self.mlp1(inputs)
         mlp2 = self.mlp2(inputs)
-
-        mult = torch.matmul(mlp1, mlp2)
-
-        out = self.skip(in1=inputs, in2=mult)
+        print(inputs[0, :, :5, :5])
+        #mult = torch.matmul(mlp1, mlp2)
+        #print(inputs.size())
+        #print(mlp2.size())
+        out = torch.cat((inputs, mlp2), dim=1)
+        #print(out.size())
+        out = self.skip(out)
         return out
 
 
@@ -62,10 +65,10 @@ class SkipConnection(nn.Module):
         self.conv = nn.Conv2d(in_features, out_features, kernel_size=1, padding=0, bias=True)
         _init_weights(self.conv)
 
-    def forward(self, in1, in2):
+    def forward(self, out):
         # in1: N x d1 x m x m
         # in2: N x d2 x m x m
-        out = torch.cat((in1, in2), dim=1)
+        # out = torch.cat((in1, in2), dim=1)
         out = self.conv(out)
         return out
 
@@ -95,7 +98,7 @@ def _init_weights(layer):
     """
     nn.init.xavier_uniform_(layer.weight)
     # nn.init.xavier_normal_(layer.weight)
-    if layer.bias is not None:
-        nn.init.zeros_(layer.bias)
+    #if layer.bias is not None:
+    #    nn.init.zeros_(layer.bias)
 
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####

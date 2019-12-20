@@ -59,8 +59,10 @@ class EquivariantSuffix(nn.Module):
 class AverageSuffixClassification(nn.Module):
     def __init__(self):
         super().__init__()
+        #self.linear = nn.Linear(2, 2, bias=False)
 
     def forward(self, x):
         # in: N x d x m x m
         # out: N x d
+        #return self.linear(torch.mean(x, (2, 3)))
         return torch.mean(x, (2, 3))
