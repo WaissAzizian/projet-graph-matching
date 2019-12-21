@@ -57,6 +57,7 @@ parser.add_argument('--epoch', nargs='?', const=1, type=int,
                     default=5)
 parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=32)
 parser.add_argument('--lr', nargs='?', const=1, type=float, default=1e-3)
+parser.add_argument('--gamma', nargs='?', const=1, type=float, default=1)
 parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
 parser.add_argument('--path_dataset', nargs='?', const=1, type=str, default='dataset')
 parser.add_argument('--path_logger', nargs='?', const=1, type=str, default='logger')
@@ -208,10 +209,11 @@ def classification_setup():
     dataloaders = classification_dataloader(args)
     return model, logger, dataloaders
 
-def classification_train(model, logger, dataloader, lr):
+def classification_train(model, logger, dataloader, lr, gamma):
     model.train()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     start = time.time()
+    scheduler = optim.lr_scheduler.StepLR(optimizer, 20, gamma = gamma)
     for epoch in range(args.epoch):
         for it, (sample, label) in enumerate(dataloader):
             model.zero_grad()
@@ -219,8 +221,6 @@ def classification_train(model, logger, dataloader, lr):
             label = label.to(device)
             pred = model(sample)
             loss = criterion(pred, label)
-            #print('label: ', label)
-            #print('pred: ', pred)
             loss.backward()
             optimizer.step()
             logger.add_train_loss(loss)
@@ -232,6 +232,7 @@ def classification_train(model, logger, dataloader, lr):
                 out = [epoch, it, loss.item(), accuracy.item(), elapsed]
                 print(("{:<10} "*5).format(*info))
                 print(("{:<10} "*2 + "{:<10.5f} "*2 + "{:<10.3f}").format(*out))
+        scheduler.step()
     print('Optimization finished.')
 
 def classification_test(model, logger, dataloader):
@@ -249,7 +250,7 @@ def make_classification():
     print(args)
     start = time.time()
     model, logger, dataloaders = classification_setup()
-    classification_train(model, logger, dataloaders[0], args.lr)
+    classification_train(model, logger, dataloaders[0], args.lr, args.gamma)
     if args.overfit:
         acc = classification_test(model, logger, dataloaders[0])
     else:
