@@ -180,8 +180,10 @@ def classification_dataloader(args):
             geometric.transforms.ToDense(num_nodes=MAX_NUM_NODES),
             Adjacency_to_tensor(),
         ]))
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [args.num_examples_train, args.num_examples_test])
+    test_dataset = torch.utils.data.Subset(dataset, torch.arange(args.num_examples_train + args.num_examples_val, len(dataset)))
+    train_dataset, val_dataset = torch.utils.data.random_split(dataset[:(args.num_examples_train + args.num_examples_val)], [args.num_examples_train, args.num_examples_val])
     train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
-    return train_dl, test_dl
+    val_dl   = torch.utils.data.DataLoader(  val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+    return train_dl, val_dl, test_dl
         

@@ -45,6 +45,8 @@ parser.add_argument('--num_examples_train', nargs='?', const=1, type=int,
                     default=int(20000))
 parser.add_argument('--num_examples_test', nargs='?', const=1, type=int,
                     default=int(1000))
+parser.add_argument('--num_examples_val', nargs='?', const=1, type=int,
+                    default=int(1000))
 parser.add_argument('--edge_density', nargs='?', const=1, type=float,
                     default=0.2)
 parser.add_argument('--n_vertices', nargs='?', const=1, type=int, default=50)
@@ -62,6 +64,7 @@ parser.add_argument('--mode', nargs='?', const=1, type=str, default='train')
 parser.add_argument('--path_dataset', nargs='?', const=1, type=str, default='dataset')
 parser.add_argument('--path_logger', nargs='?', const=1, type=str, default='logger')
 parser.add_argument('--path_exp', nargs='?', const=1, type=str, default='experiments/logs.json')
+parser.add_argument('--pickle', nargs='?', const=1, type=str)
 parser.add_argument('--print_freq', nargs='?', const=1, type=int, default=100)
 parser.add_argument('--test_freq', nargs='?', const=1, type=int, default=500)
 parser.add_argument('--save_freq', nargs='?', const=1, type=int, default=2000)
@@ -79,6 +82,8 @@ parser.add_argument('--expressive_suffix', nargs='?', const=1, type=bool,
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--overfit', nargs= '?', const=1, type=bool,
+                    default=False)
+parser.add_argument('--validation', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--num_layers', nargs='?', const=1, type=int,
                     default=20)
@@ -226,7 +231,7 @@ def classification_train(model, logger, dataloader, lr, gamma):
             logger.add_train_loss(loss)
             accuracy = ((label == pred.max(-1)[1])).float().mean()
             elapsed = time.time() - start
-            if it % logger.args['print_freq'] == 0:
+            if (it % logger.args['print_freq'] == 0) and not args.validation:
                 loss = loss.data.cpu().numpy()#[0]
                 info = ['epoch', 'iteration', 'loss', 'accuracy', 'elapsed']
                 out = [epoch, it, loss.item(), accuracy.item(), elapsed]
@@ -253,12 +258,17 @@ def make_classification():
     classification_train(model, logger, dataloaders[0], args.lr, args.gamma)
     if args.overfit:
         acc = classification_test(model, logger, dataloaders[0])
-    else:
+    elif args.validation:
         acc = classification_test(model, logger, dataloaders[1])
-    end = time.time()
-    print('accuracy: ', acc)
-    delta = end - start
-    experiment.save_experiment(args, acc, delta)
+        with open(args.pickle, 'wb') as f:
+            torch.save(args, f)
+            torch.save(acc, f)
+    else:
+        acc = classification_test(model, logger, dataloaders[2])
+        end = time.time()
+        print('accuracy: ', acc)
+        delta = end - start
+        experiment.save_experiment(args, acc, delta)
 
 
 ###############################################################################
