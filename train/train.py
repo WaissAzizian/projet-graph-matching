@@ -260,6 +260,7 @@ def make_classification():
         acc = classification_test(model, logger, dataloaders[0])
     elif args.validation:
         acc = classification_test(model, logger, dataloaders[1])
+        print('accuracy: ', acc)
         with open(args.pickle, 'wb') as f:
             torch.save(args, f)
             torch.save(acc, f)
