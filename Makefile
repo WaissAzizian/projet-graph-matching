@@ -32,9 +32,9 @@ quick_classification:
 classification_experiment:
 	python3 train/train.py --num_examples_train 800 --num_examples_test 200 --classification --print_freq 10 --epoch 100 --num_features 2 --num_layers 3 --num_blocks 2 --lr 0.05 --gamma 0.7
 
-CMD="python3 train/train.py --num_examples_train 700 --num_examples_test 150 --num_examples_val 150 --classification --validation --print_freq 10 --epoch 1 --num_features 2 --num_layers 3 --num_blocks 2"
+CMD="python3 train/train.py --num_examples_train 700 --num_examples_test 150 --num_examples_val 150 --classification --validation --print_freq 10 --epoch 200 --num_features 2 --num_layers 3 --num_blocks 2"
 classification_val:
-	python3 -m grid val_results $(CMD) --lr 5e-5 1e-4 5e-4 1e-3 --gamma 0.5 0.75 1
+	python3 -m grid val_results $(CMD) --lr 5e-5 1e-4 5e-4 1e-3 --gamma 0.5 0.75 1 --n 3
 	
 
 INSTANCE=pytorch-instance-p4

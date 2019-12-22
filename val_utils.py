@@ -3,15 +3,18 @@
 import os
 import torch
 
-def get_best(dir):
-    best_acc, acc = None, None
+def get_best(directory, display=['lr', 'gamma']):
+    best_acc, acc = 0, 0
     best_param, param = None, None
     best_filename = None
-    for filename in os.listdir(dir):
+    for filename in os.listdir(directory):
         if filename.endswith('.pkl'):
-            with open(filename, 'rb') as f:
+            with open(os.path.join(directory, filename), 'rb') as f:
                 param = torch.load(f)
                 acc = torch.load(f)
+                lst = ['{}={:.5f}'.format(p, vars(param)[p]) for p in display]
+                s = ', '.join(lst)
+                print('[{}] {:.3f} ({})'.format(s, acc, filename)) 
                 if acc > best_acc:
                     best_acc = acc
                     best_param = param
@@ -20,7 +23,7 @@ def get_best(dir):
 
 if __name__ == '__main__':
     f, param, acc = get_best('./val_results')
-    print('Best accuracy: {}'.format(acc))
+    print('Best accuracy: {:.3f}'.format(acc))
     print('File: {}'.format(f))
-    print('Parameters: {}'.format(f))
+    print('Parameters: {}'.format(param))
 
