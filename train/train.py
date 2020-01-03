@@ -81,6 +81,8 @@ parser.add_argument('--num_features', nargs='?', const=1, type=int,
                     default=20)
 parser.add_argument('--sinkhorn_iterations', nargs='?', const=1, type=int,
                     default=0)
+parser.add_argument('--wasserstein_iterations', nargs='?', const=1, type=int,
+                    default=0)
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--overfit', nargs= '?', const=1, type=bool,
@@ -183,7 +185,7 @@ def setup():
     logger.write_settings(args)
     config = make_config(args)
     model = base_model.BaseModel(config)
-    siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations).to(device)
+    siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations, wasserstein_iterations=args.wasserstein_iterations).to(device)
     gen = Generator()
     gen.set_args(vars(args))
     gen.load_dataset()

@@ -10,7 +10,7 @@ quick_test:
 	python3 train/train.py --num_examples_test 100 --mode test
 
 quick_experiment:
-	python3 train/train.py --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment --lr 0.0001 --num_layers 3 --num_blocks 2 --num_features 16 --sinkhorn_iterations 5
+	python3 train/train.py --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment --lr 0.0001 --num_layers 3 --num_blocks 2 --num_features 16
 
 CMD="python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mode validation --print_freq 1000 --epoch 50 --step_epoch 5 --num_features 16 --num_layers 3 --num_blocks 2"
 validation:
