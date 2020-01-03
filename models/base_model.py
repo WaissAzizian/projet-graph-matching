@@ -38,10 +38,8 @@ class BaseModel(nn.Module):
             self.fc_layers.append(modules.FullyConnected(512, 256))
             self.fc_layers.append(modules.FullyConnected(256, 2, activation_fn=None))
         else:
-            if config.architecture.expressive_suffix:
-                self.suffix = suffix.EquivariantSuffix(last_layer_features, last_layer_features)
-            else:
-                self.suffix = suffix.AverageSuffix()
+            self.suffix = suffix.Features_2_to_1()
+            self.mlp = modules.MlpBlock1d([5*block_features[-1], 512, 256, 128, 64])
 
     def forward(self, x):
         #here x.shape = (bs, n_vertices, n_vertices, n_features)

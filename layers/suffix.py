@@ -16,26 +16,22 @@ class Features_2_to_1(nn.Module):
 
     def forward(self, x):
         # in: N x d x m x m
-        # out: N x m x d x basis
+        # out: N x (d * basis) x m
+        N = x.size(0)
+        m = x.size(-1)
         diag_part = torch.diagonal(x, dim1=2, dim2=3)
-        sum_diag_part = torch.sum(diag_part, 2).unsqueeze(-1)
-        sum_of_rows = torch.sum(x, 3)
-        sum_of_cols = torch.sum(x, 2)
-        sum_all = torch.sum(x, (2,3)).unsqueeze(-1)
+        max_diag_part = torch.max(diag_part, 2)[0].unsqueeze(-1)
+        max_of_rows = torch.max(x, 3)[0]
+        max_of_cols = torch.max(x, 2)[0]
+        max_all = torch.max(torch.max(x, 2)[0], 2)[0].unsqueeze(-1)
 
         op1 = diag_part
-        op2 = sum_diag_part.expand_as(op1)
-        op3 = sum_of_rows
-        op4 = sum_of_cols
-        op5 = sum_all.expand_as(op1)
+        op2 = max_diag_part.expand_as(op1)
+        op3 = max_of_rows
+        op4 = max_of_cols
+        op5 = max_all.expand_as(op1)
 
-        m = op1.size(-1)
-        op2 = op2/m
-        op3 = op3/m
-        op4 = op4/m
-        op5 = op5/(m**2)
-
-        return torch.stack([op1, op2, op3, op4, op5]).permute(1, 3, 2, 0)
+        return torch.stack([op1, op2, op3, op4, op5]).permute(1, 0, 2, 3).reshape(N, -1, m)
 
 class EquivariantSuffix(nn.Module):
     def __init__(self, input_features, output_features):

@@ -57,6 +57,8 @@ parser.add_argument('--generative_model', nargs='?', const=1, type=str,
                     default='ErdosRenyi')
 parser.add_argument('--epoch', nargs='?', const=1, type=int,
                     default=5)
+parser.add_argument('--step_epoch', nargs='?', const=1, type=int,
+                    default=5)
 parser.add_argument('--batch_size', nargs='?', const=1, type=int, default=32)
 parser.add_argument('--lr', nargs='?', const=1, type=float, default=1e-3)
 parser.add_argument('--gamma', nargs='?', const=1, type=float, default=1)
@@ -129,10 +131,11 @@ def compute_loss(pred, labels):
     labels = labels.view(-1)
     return criterion(pred, labels)
 
-def train(siamese_gnn, logger, gen, lr):
+def train(siamese_gnn, logger, gen, lr, gamma, step_epoch):
     siamese_gnn.train()
     labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
-    optimizer = torch.optim.Adamax(siamese_gnn.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(siamese_gnn.parameters(), lr=lr)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_epoch, gamma=gamma)
     dataloader = gen.train_loader(args.batch_size)
     start = time.time()
     for epoch in range(args.epoch):
@@ -160,6 +163,7 @@ def train(siamese_gnn, logger, gen, lr):
             if it % logger.args['save_freq'] == 0:
                 logger.save_model(siamese_gnn)
                 logger.save_results()
+        scheduler.step()
     print('Optimization finished.')
     logger.save_model(siamese_gnn)
 
@@ -189,18 +193,25 @@ def setup():
 def make_qap():
     siamese_gnn, logger, gen = setup()
     if args.mode == 'train':
-        train(siamese_gnn, logger, gen, args.lr)
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
     if args.mode == 'test':
         siamese_gnn = logger.load_model()
         test(siamese_gnn, logger, gen)
     if args.mode == 'experiment':
         start = time.time()
-        train(siamese_gnn, logger, gen, args.lr)
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
         siamese_gnn = logger.load_model()
         acc = test(siamese_gnn, logger, gen)
         end = time.time()
         delta = end - start
         experiment.save_experiment(args, acc, delta)
+    if args.mode == 'validation':
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
+        siamese_gnn = logger.load_model()
+        acc = test(siamese_gnn, logger, gen)
+        with open(args.pickle, 'wb') as f:
+            torch.save(args, f)
+            torch.save(acc, f)
 
 ###############################################################################
 #                                Classification                               #

@@ -98,3 +98,23 @@ def _init_weights(layer):
     #    nn.init.zeros_(layer.bias)
 
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
+
+class MlpBlock1d(nn.Module):
+    """
+    Block of MLP layers with activation function after each (1x1 conv layers).
+    """
+    def __init__(self, list_of_features, activation_fn=nn.functional.relu):
+        super().__init__()
+        self.activation = activation_fn
+        self.convs = nn.ModuleList()
+        for (i, in_feature) in enumerate(list_of_features[:-1]):
+            self.convs.append(nn.Conv1d(in_feature, list_of_features[i+1], kernel_size=1, padding=0, bias=True))
+            _init_weights(self.convs[-1])
+
+    def forward(self, inputs):
+        out = inputs
+        for conv_layer in self.convs[:-1]:
+            out = self.activation(conv_layer(out))
+        out = self.convs[-1](out)
+
+        return out
