@@ -79,8 +79,8 @@ parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float,
 
 parser.add_argument('--num_features', nargs='?', const=1, type=int,
                     default=20)
-parser.add_argument('--expressive_suffix', nargs='?', const=1, type=bool,
-                    default=False)
+parser.add_argument('--sinkhorn_iterations', nargs='?', const=1, type=int,
+                    default=0)
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--overfit', nargs= '?', const=1, type=bool,
@@ -110,7 +110,6 @@ def make_config(args):
     arch = {
             'depth_of_mlp' : args.num_layers,
             'block_features' : [args.num_features] * args.num_blocks,
-            'expressive_suffix' : args.expressive_suffix,
             }
     conf = {
             'node_labels' : 1,
@@ -126,7 +125,7 @@ template2 = '{:<10} {:<10} {:<10.5f} {:<10.5f} {:<15} {:<10} {:<10} {:<10.3f} \n
 
 
 def compute_loss(pred, labels):
-    pred = pred.view(-1, pred.size()[-1])
+    pred = pred.reshape(-1, pred.size()[-1])
     labels = torch.flatten(labels)
     labels = labels.view(-1)
     return criterion(pred, labels)
@@ -184,7 +183,7 @@ def setup():
     logger.write_settings(args)
     config = make_config(args)
     model = base_model.BaseModel(config)
-    siamese_gnn = siamese.Siamese(model).to(device)
+    siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations).to(device)
     gen = Generator()
     gen.set_args(vars(args))
     gen.load_dataset()
