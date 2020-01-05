@@ -40,6 +40,13 @@ class Generator(object):
         W = networkx.adjacency_matrix(g).todense().astype(float)
         W = np.array(W)
         return W
+    
+    def BarabasiAlbert_netx(self, p, N):
+        m = int(p*(N -1)/2)
+        g = networkx.barabasi_albert_graph(N, m)
+        W = networkx.adjacency_matrix(g).todense().astype(float)
+        W = np.array(W)
+        return W
 
     def RegularGraph_netx(self, p, N):
         """ Generate random regular graph """
@@ -63,6 +70,9 @@ class Generator(object):
             W = self.ErdosRenyi_netx(self.edge_density, self.n_vertices)
         elif self.generative_model == 'Regular':
             W = self.RegularGraph_netx(self.edge_density, self.n_vertices)
+        elif self.generative_model == 'BarabasiAlbert':
+            W = self.BarabasiAlbert_netx(self.edge_density, self.n_vertices)
+
         else:
             raise ValueError('Generative model {} not supported'
                              .format(self.generative_model))

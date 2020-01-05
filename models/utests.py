@@ -35,6 +35,7 @@ class Configuration:
         self.node_labels = node_labels
         input_features = node_labels + 1
         self.architecture = Architecture(input_features, block_features, depth_of_mlp, expressive_suffix)
+        self.classification = False
 
 class TestPPGNNModel(unittest.TestCase):
     def setUp(self):
