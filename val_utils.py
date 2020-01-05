@@ -2,8 +2,9 @@
 
 import os
 import torch
+import argparse
 
-def get_best(directory, display=['lr', 'gamma']):
+def get_best(directory, display=['lr', 'gamma', 'num_features', 'num_layers']):
     best_acc, acc = 0, 0
     best_param, param = None, None
     best_filename = None
@@ -22,7 +23,10 @@ def get_best(directory, display=['lr', 'gamma']):
     return best_filename, best_param, best_acc
 
 if __name__ == '__main__':
-    f, param, acc = get_best('./val_results')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--directory", help="directory where the pickle files are stored", default="./val_results")
+    args = parser.parse_args()
+    f, param, acc = get_best(args.directory)
     print('Best accuracy: {:.3f}'.format(acc))
     print('File: {}'.format(f))
     print('Parameters: {}'.format(param))
