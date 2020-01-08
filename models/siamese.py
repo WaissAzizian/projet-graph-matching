@@ -14,7 +14,7 @@ def sinkhorn_knopp(A, iterations=1):
         A = A.reshape(*A_size).permute(0, 2, 1)
     return A
 
-def sinkhorn_wasserstein(X, Y, iterations=1, epsilon=(.06)**2):
+def sinkhorn_wasserstein(X, Y, iterations=1, epsilon=1):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
     m = X.size(1)
     N = X.size(0)
@@ -23,10 +23,12 @@ def sinkhorn_wasserstein(X, Y, iterations=1, epsilon=(.06)**2):
     a = torch.ones(N, m).to(device)/m
     b = torch.ones(N, m).to(device)/m
     K = torch.exp(-torch.cdist(X, Y)**2/epsilon)
+    assert not torch.isnan(K).any()
     for it in range(iterations):
         u = a / (K * v[:, None,:]).sum(2)
         v = b / (K * u[:, :,None]).sum(1)
     P = torch.einsum('bi, bij, bj -> bij', u, K, v)
+    assert not torch.isnan(P).any()
     return P
 
 class Siamese(nn.Module):
