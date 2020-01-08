@@ -1,6 +1,5 @@
 #Custom
 *.np
-*.txt
 *.npz
 *.png
 *.pt
