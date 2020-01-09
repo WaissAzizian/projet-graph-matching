@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 #From QAP's original code
-def sinkhorn_knopp(A, iterations=1):
+def sinkhorn_knopp_old(A, iterations=1):
     A_size = A.size()
     for it in range(iterations):
         A = A.reshape(A_size[0]*A_size[1], A_size[2])
@@ -12,6 +12,15 @@ def sinkhorn_knopp(A, iterations=1):
         A = A.reshape(A_size[0]*A_size[1], A_size[2])
         A = F.softmax(A, dim=-1)
         A = A.reshape(*A_size).permute(0, 2, 1)
+    return A
+
+def sinkhorn_knopp(A, iterations=1):
+    A_size = A.size()
+    if iterations > 0:
+        A = F.relu(A)
+    for it in range(iterations):
+        A = A/A.sum(2).unsqueeze(-1)
+        A = A/A.sum(1).unsqueeze(1)
     return A
 
 def sinkhorn_wasserstein(X, Y, iterations=1, epsilon=1):
