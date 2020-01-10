@@ -184,10 +184,10 @@ class Adjacency_to_tensor:
     def __repr__(self):
         return 'Adjacency_to_tensor'
 
+IMDB_MAX_NUM_NODES=136 #for IMDB-BINARY dataset
 def classification_dataloader(args):
-    MAX_NUM_NODES=136 #for IMDB-BINARY dataset
     dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.Compose([
-            geometric.transforms.ToDense(num_nodes=MAX_NUM_NODES),
+            geometric.transforms.ToDense(num_nodes=IMDB_MAX_NUM_NODES),
             Adjacency_to_tensor(),
         ]))
     test_dataset = torch.utils.data.Subset(dataset, torch.arange(args.num_examples_train + args.num_examples_val, len(dataset)))

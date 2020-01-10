@@ -9,6 +9,7 @@ import time
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+import sklearn
 
 #Pytorch requirements
 import unicodedata
@@ -33,7 +34,7 @@ import experiment
 import config
 import models.siamese as siamese
 import models.base_model as base_model
-from data_generator import Generator, classification_dataloader
+from data_generator import Generator, classification_dataloader, IMDB_MAX_NUM_NODES
 from Logger import Logger
 parser = argparse.ArgumentParser()
 
@@ -84,6 +85,8 @@ parser.add_argument('--sinkhorn_iterations', nargs='?', const=1, type=int,
 parser.add_argument('--wasserstein_iterations', nargs='?', const=1, type=int,
                     default=0)
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
+                    default=False)
+parser.add_argument('--pretrained_classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--overfit', nargs= '?', const=1, type=bool,
                     default=False)
@@ -283,13 +286,35 @@ def make_classification():
         delta = end - start
         experiment.save_experiment(args, acc, delta)
 
+###############################################################################
+#                                   Main                                      #
+###############################################################################
+def apply_model(model, dataloader, X, Y):
+    for i, (x, y) in enumerate(dataloader):
+        out = model(x)
+        X[i*dataloader.batch_size : i*dataloader.batch_size+out.size(0)] = out.data.numpy()
+        Y[i*dataloader.batch_size : i*dataloader.batch_size+y.size(0)] = y.data.numpy()
+
+def make_pretrained_classification():
+    model, logger, dataloaders = classification_setup()
+    logger.load_model()
+    X_train = np.empty((args.num_examples_train, IMDB_MAX_NUM_NODES, 5*args.num_features))
+    Y_train = np.empty(args.num_examples_train)
+    X_test  = np.empty((args.num_examples_test, IMDB_MAX_NUM_NODES, 5*args.num_features))
+    Y_test  = np.empty(args.num_examples_test)
+    apply_model(model, dataloaders[0], X_train, Y_train)
+    apply_model(model, dataloaders[2], X_test,  Y_test)
+    clf = sklearn.svm.SVC()
+    clf.fit(X_train, Y_train)
+    acc = clf.score(X_test, Y_test)
+    print('Accuracy: {:.5f}'.format(acc))
 
 ###############################################################################
 #                                   Main                                      #
 ###############################################################################
 
 if __name__ == '__main__':
-    if args.classification:
-        make_classification()
+    if args.pretrained_classification:
+        make_pretrained_classification()
     else:
         make_qap()
