@@ -60,3 +60,6 @@ list:
 pull_git:
 	git fetch --all
 	git reset --hard origin/master
+
+requirements:
+	pip install -r requirements.txt --user
