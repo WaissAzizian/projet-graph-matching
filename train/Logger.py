@@ -12,6 +12,8 @@ from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
 
+from models.siamese import accuracy_lap
+
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
     dtype_l = torch.cuda.LongTensor
@@ -85,11 +87,11 @@ class Logger(object):
         self.loss_test.append(loss)
 
     def add_train_accuracy(self, pred, labels):
-        accuracy = compute_recovery_rate(pred, labels)
+        accuracy = compute_recovery_rate(pred, labels) if not self.args['otloss'] else accuracy_lap(pred)
         self.accuracy_train.append(accuracy)
 
     def add_test_accuracy(self, pred, labels):
-        accuracy = compute_recovery_rate(pred, labels)
+        accuracy = compute_recovery_rate(pred, labels) if not self.args['otloss'] else accuracy_lap(pred)
         self.accuracy_test.append(accuracy)
 
     def plot_train_loss(self):

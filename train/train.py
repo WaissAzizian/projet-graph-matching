@@ -84,6 +84,8 @@ parser.add_argument('--sinkhorn_iterations', nargs='?', const=1, type=int,
                     default=0)
 parser.add_argument('--wasserstein_iterations', nargs='?', const=1, type=int,
                     default=0)
+parser.add_argument('--otloss', nargs= '?', const=1, type=bool,
+                    default=False)
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--pretrained_classification', nargs= '?', const=1, type=bool,
@@ -135,7 +137,7 @@ def compute_loss(pred, labels):
     labels = labels.view(-1)
     return criterion(pred, labels)
 
-def train(siamese_gnn, logger, gen, lr, gamma, step_epoch):
+def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, compute_loss_func):
     siamese_gnn.train()
     labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
     optimizer = torch.optim.Adam(siamese_gnn.parameters(), lr=lr)
@@ -146,7 +148,7 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch):
         for it, sample in enumerate(dataloader):
             sample = sample.to(device)
             pred = siamese_gnn(sample[:, 0], sample[:, 1])
-            loss = compute_loss(pred, labels[: len(pred)])
+            loss = compute_loss_func(pred, labels[: len(pred)])
             siamese_gnn.zero_grad()
             loss.backward()
             #nn.utils.clip_grad_norm(siamese_gnn.parameters(), args.clip_grad_norm)
@@ -188,7 +190,7 @@ def setup():
     logger.write_settings(args)
     config = make_config(args)
     model = base_model.BaseModel(config)
-    siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations, wasserstein_iterations=args.wasserstein_iterations).to(device)
+    siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations, wasserstein_iterations=args.wasserstein_iterations, otloss=args.otloss).to(device)
     gen = Generator()
     gen.set_args(vars(args))
     gen.load_dataset()
@@ -196,21 +198,22 @@ def setup():
 
 def make_qap():
     siamese_gnn, logger, gen = setup()
+    compute_loss_func = compute_loss if not args.otloss else siamese.compute_otloss
     if args.mode == 'train':
-        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch, compute_loss_func)
     if args.mode == 'test':
         siamese_gnn = logger.load_model()
         test(siamese_gnn, logger, gen)
     if args.mode == 'experiment':
         start = time.time()
-        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch, compute_loss_func)
         siamese_gnn = logger.load_model()
         acc = test(siamese_gnn, logger, gen)
         end = time.time()
         delta = end - start
         experiment.save_experiment(args, acc, delta)
     if args.mode == 'validation':
-        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch, compute_loss_func)
         siamese_gnn = logger.load_model()
         acc = test(siamese_gnn, logger, gen)
         with open(args.pickle, 'wb') as f:

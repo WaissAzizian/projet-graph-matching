@@ -4,3 +4,6 @@ torch-sparse
 torch-geometric
 torch-scatter
 torch-cluster
+pykeops
+git+https://github.com/jeanfeydy/geomloss.git
+lap

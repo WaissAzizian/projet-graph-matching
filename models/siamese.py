@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+import lap
+import geomloss
 
 #From QAP's original code
 def sinkhorn_knopp_old(A, iterations=1):
@@ -40,19 +43,40 @@ def sinkhorn_wasserstein(X, Y, iterations=1, epsilon=1):
     assert not torch.isnan(P).any()
     return P
 
+def predict_lap(x, y):
+    cost_matrices = torch.cdist(x, y, p=2).data.numpy()
+    permutations = np.empty((x.size(0), x.size(1)), dtype=int)
+    for index, cost_matrix in enumerate(cost_matrices):
+        permutation, _ = lap.lapjv(cost_matrix, return_cost=False)
+        permutations[index] = permutation
+    return permutations
+
+def accuracy_lap(pred):
+    (x, y) = pred
+    permutations = predict_lap(x, y)
+    m = permutations.shape[1]
+    identity = np.arange(m)
+    acc = np.mean(permutations == identity[np.newaxis, :])
+    return acc
+
+otloss = geomloss.SamplesLoss()
+def compute_otloss(pred, _):
+    x = pred[0].contiguous()
+    y = pred[1].contiguous()
+    return otloss(x, y).mean()
+
 class Siamese(nn.Module):
-    def __init__(self, module: nn.Module, sinkhorn_iterations=0, wasserstein_iterations=0):
+    def __init__(self, module: nn.Module, sinkhorn_iterations=0, wasserstein_iterations=0, otloss=False):
         super(Siamese, self).__init__()
         self.gnn = module
         self.sinkhorn_iterations = sinkhorn_iterations
-        self.wasserstein_iterations = wasserstein_iterations
+        self.otloss = otloss
 
     def forward(self, g1, g2):
         emb1, emb2 = self.gnn(g1), self.gnn(g2)
         #here emb.shape=(bs, n_vertices, n_features)
-        if self.wasserstein_iterations > 0:
-            assert self.sinkhorn_iterations == 0
-            out = sinkhorn_wasserstein(emb1.contiguous(), emb2.contiguous())
+        if self.otloss:
+            return emb1, emb2
         else:
             out = torch.bmm(emb1, emb2.permute(0, 2, 1))
             out = sinkhorn_knopp(out, iterations=self.sinkhorn_iterations)
