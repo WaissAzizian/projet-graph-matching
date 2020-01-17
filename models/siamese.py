@@ -44,7 +44,7 @@ def sinkhorn_wasserstein(X, Y, iterations=1, epsilon=1):
     return P
 
 def predict_lap(x, y):
-    cost_matrices = torch.cdist(x, y, p=2).data.numpy()
+    cost_matrices = torch.cdist(x, y, p=2).data.cpu().numpy()
     permutations = np.empty((x.size(0), x.size(1)), dtype=int)
     for index, cost_matrix in enumerate(cost_matrices):
         permutation, _ = lap.lapjv(cost_matrix, return_cost=False)
@@ -63,7 +63,9 @@ otloss = geomloss.SamplesLoss()
 def compute_otloss(pred, _):
     x = pred[0].contiguous()
     y = pred[1].contiguous()
-    return otloss(x, y).mean()
+    loss = otloss(x, y)
+    assert (loss > 0).all()
+    return loss.mean()
 
 class Siamese(nn.Module):
     def __init__(self, module: nn.Module, sinkhorn_iterations=0, wasserstein_iterations=0, otloss=False):
