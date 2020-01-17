@@ -30,16 +30,18 @@ class BaseModel(nn.Module):
 
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
         self.classification = config.classification
-
+        self.pretrained_classification = config.pretrained_classification
+                
         if config.classification:
             self.suffix = suffix.MaxSuffixClassification()
-            self.fc_layers = nn.ModuleList()
-            self.fc_layers.append(modules.FullyConnected(2*block_features[-1], 512))
-            self.fc_layers.append(modules.FullyConnected(512, 256))
-            self.fc_layers.append(modules.FullyConnected(256, 2, activation_fn=None))
+            if not config.pretrained_classification:
+                self.fc_layers = nn.ModuleList()
+                self.fc_layers.append(modules.FullyConnected(2*block_features[-1], 512))
+                self.fc_layers.append(modules.FullyConnected(512, 256))
+                self.fc_layers.append(modules.FullyConnected(256, 2, activation_fn=None))
         else:
             self.suffix = suffix.Features_2_to_1()
-            self.mlp = modules.MlpBlock1d([5*block_features[-1], 512, 256, 128, 64])
+            #self.mlp = modules.MlpBlock1d([5*block_features[-1], 512, 256, 128, 64])
 
     def forward(self, x):
         #here x.shape = (bs, n_vertices, n_vertices, n_features)
@@ -54,6 +56,7 @@ class BaseModel(nn.Module):
             x = x.permute(0, 2, 1)
             # here x.shape = (bs,n_vertices, n_features)
         else:
-            for l in self.fc_layers:
-                x = l(x)
+            if not self.pretrained_classification:
+                for l in self.fc_layers:
+                    x = l(x)
         return x

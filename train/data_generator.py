@@ -40,7 +40,7 @@ class Generator(object):
         W = networkx.adjacency_matrix(g).todense().astype(float)
         W = np.array(W)
         return W
-    
+
     def BarabasiAlbert_netx(self, p, N):
         m = int(p*(N -1)/2)
         g = networkx.barabasi_albert_graph(N, m)
@@ -95,12 +95,12 @@ class Generator(object):
         B = self.adjacency_matrix_to_tensor_representation(W)
         B_noise = self.adjacency_matrix_to_tensor_representation(W_noise)
         return (B, B_noise)
-    
+
     def create_dataset_test(self):
         for i in range(self.num_examples_test):
             example = self.compute_example()
             self.data_test.append(example)
-    
+
     def create_dataset_train(self):
         for i in range(self.num_examples_train):
             example = self.compute_example()
@@ -146,7 +146,7 @@ class Generator(object):
 
     def clean_datasets(self):
         for usage in ['train', 'test']:
-            if self.random_noise: 
+            if self.random_noise:
                 filename = 'QAP{}_RN.np'.format(usage)
             else:
                 filename = ('QAP{}_{}_{}_{}.np'.format(usage, self.generative_model,
@@ -160,7 +160,7 @@ class Generator(object):
         assert len(self.data_train) > 0
         torch_data_train = torch.Tensor(self.data_train)
         return torch.utils.data.DataLoader(torch_data_train, batch_size=batch_size, shuffle=True, num_workers=1)
-    
+
     def test_loader(self, batch_size):
         assert len(self.data_test) > 0
         torch_data_test = torch.Tensor(self.data_test)
@@ -196,4 +196,64 @@ def classification_dataloader(args):
     test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     val_dl   = torch.utils.data.DataLoader(  val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     return train_dl, val_dl, test_dl
-        
+
+class Adjacency_to_tensor_noise:
+    def __init__(self, args, data_generator):
+        self.random_noise = args.random_noise
+        self.noise_model = args.noise_model
+        self.edge_density = args.edge_density
+        self.n_vertices = args.n_vertices
+        self.noise = args.noise
+        self.data_generator = data_generator
+
+    def __call__(self, ex):
+        W = ex.adj
+        if self.random_noise:
+            self.noise = np.random.uniform(0.000, 0.050, 1)
+        if self.noise_model == 1:
+            # use noise model from [arxiv 1602.04181], eq (3.8)
+            noise = torch.from_numpy(self.data_generator.ErdosRenyi(self.noise, self.n_vertices))
+            W_noise = W*(1-noise) + (1-W)*noise
+        elif self.noise_model == 2:
+            # use noise model from [arxiv 1602.04181], eq (3.9)
+            pe1 = self.noise
+            pe2 = (self.edge_density*self.noise)/(1.0-self.edge_density)
+            noise1 = torch.from_numpy(self.data_generator.ErdosRenyi_netx(pe1, self.n_vertices))
+            noise2 = torch.from_numpy(self.data_generator.ErdosRenyi_netx(pe2, self.n_vertices))
+            W_noise = W*(1-noise1) + (1-W)*noise2
+        else:
+            raise ValueError('Noise model {} not implemented'
+                             .format(self.noise_model))
+        degrees = W.sum(1)
+        n = len(W)
+        B = torch.zeros((n,n,2))
+        B[:, :, 1] = W
+        indices = torch.arange(n)
+        B[indices, indices, 0] = degrees
+        degrees_noise = W_noise.sum(1)
+        B_noise = torch.zeros((n,n,2))
+        B_noise[:, :, 1] = W_noise
+        indices = torch.arange(n)
+        B_noise[indices, indices, 0] = degrees_noise.float()
+        return torch.stack((B, B_noise))
+
+
+    def __repr__(self):
+        return 'Adjacency_to_tensor'
+
+IMDB_MAX_NUM_NODES=136 #for IMDB-BINARY dataset
+def selfsupervised_dataloader(args, data_generator):
+    dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.Compose([
+            geometric.transforms.ToDense(num_nodes=IMDB_MAX_NUM_NODES),
+            Adjacency_to_tensor_noise(args, data_generator),
+        ]))
+    if args.semi_supervised:
+        dl = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        return dl, dl, dl
+    else:
+        test_dataset = torch.utils.data.Subset(dataset, torch.arange(args.num_examples_train + args.num_examples_val, len(dataset)))
+        train_dataset, val_dataset = torch.utils.data.random_split(dataset[:(args.num_examples_train + args.num_examples_val)], [args.num_examples_train, args.num_examples_val])
+        train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        val_dl   = torch.utils.data.DataLoader(  val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        return train_dl, val_dl, test_dl

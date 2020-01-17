@@ -34,7 +34,8 @@ import experiment
 import config
 import models.siamese as siamese
 import models.base_model as base_model
-from data_generator import Generator, classification_dataloader, IMDB_MAX_NUM_NODES
+import layers.suffix as suffix
+from data_generator import Generator, classification_dataloader, IMDB_MAX_NUM_NODES, selfsupervised_dataloader
 from Logger import Logger
 parser = argparse.ArgumentParser()
 
@@ -88,6 +89,10 @@ parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--pretrained_classification', nargs= '?', const=1, type=bool,
                     default=False)
+parser.add_argument('--real_world_dataset', nargs= '?', const=1, type=bool,
+                    default=False)
+parser.add_argument('--semi_supervised', nargs= '?', const=1, type=bool,
+                    default=False)
 parser.add_argument('--overfit', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--validation', nargs= '?', const=1, type=bool,
@@ -119,6 +124,7 @@ def make_config(args):
     conf = {
             'node_labels' : 1,
             'classification': args.classification,
+            'pretrained_classification': args.pretrained_classification,
             }
     return config.Configuration(conf, arch)
 
@@ -135,12 +141,13 @@ def compute_loss(pred, labels):
     labels = labels.view(-1)
     return criterion(pred, labels)
 
-def train(siamese_gnn, logger, gen, lr, gamma, step_epoch):
+def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
     siamese_gnn.train()
     labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
     optimizer = torch.optim.Adam(siamese_gnn.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_epoch, gamma=gamma)
-    dataloader = gen.train_loader(args.batch_size)
+    if not dataloader:
+        dataloader = gen.train_loader(args.batch_size)
     start = time.time()
     for epoch in range(args.epoch):
         for it, sample in enumerate(dataloader):
@@ -196,12 +203,15 @@ def setup():
 
 def make_qap():
     siamese_gnn, logger, gen = setup()
-    if args.mode == 'train':
+    if args.real_world_dataset:
+        train_dl, val_dl, test_dl = selfsupervised_dataloader(args, gen)
+        train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch, dataloader = train_dl)
+    elif args.mode == 'train':
         train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
-    if args.mode == 'test':
+    elif args.mode == 'test':
         siamese_gnn = logger.load_model()
         test(siamese_gnn, logger, gen)
-    if args.mode == 'experiment':
+    elif args.mode == 'experiment':
         start = time.time()
         train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
         siamese_gnn = logger.load_model()
@@ -209,7 +219,7 @@ def make_qap():
         end = time.time()
         delta = end - start
         experiment.save_experiment(args, acc, delta)
-    if args.mode == 'validation':
+    elif args.mode == 'validation':
         train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
         siamese_gnn = logger.load_model()
         acc = test(siamese_gnn, logger, gen)
@@ -287,7 +297,7 @@ def make_classification():
         experiment.save_experiment(args, acc, delta)
 
 ###############################################################################
-#                                   Main                                      #
+#                              Self supervised                                #
 ###############################################################################
 def apply_model(model, dataloader, X, Y):
     for i, (x, y) in enumerate(dataloader):
@@ -298,9 +308,12 @@ def apply_model(model, dataloader, X, Y):
 def make_pretrained_classification():
     model, logger, dataloaders = classification_setup()
     logger.load_model()
-    X_train = np.empty((args.num_examples_train, IMDB_MAX_NUM_NODES, 5*args.num_features))
+    model.classification = True
+    model.pretrained_classification = True
+    model.suffix = suffix.MaxSuffixClassification()
+    X_train = np.empty((args.num_examples_train, 2*args.num_features))
     Y_train = np.empty(args.num_examples_train)
-    X_test  = np.empty((args.num_examples_test, IMDB_MAX_NUM_NODES, 5*args.num_features))
+    X_test  = np.empty((args.num_examples_test, 2*args.num_features))
     Y_test  = np.empty(args.num_examples_test)
     apply_model(model, dataloaders[0], X_train, Y_train)
     apply_model(model, dataloaders[2], X_test,  Y_test)
