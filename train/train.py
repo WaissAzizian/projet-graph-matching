@@ -317,7 +317,7 @@ def make_pretrained_classification():
     Y_test  = np.empty(args.num_examples_test)
     apply_model(model, dataloaders[0], X_train, Y_train)
     apply_model(model, dataloaders[2], X_test,  Y_test)
-    clf = sklearn.svm.SVC()
+    clf = sklearn.svm.SVC(gamma='scale') #default mode
     clf.fit(X_train, Y_train)
     acc = clf.score(X_test, Y_test)
     print('Accuracy: {:.5f}'.format(acc))
