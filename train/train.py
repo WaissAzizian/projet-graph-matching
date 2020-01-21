@@ -301,9 +301,11 @@ def make_classification():
 ###############################################################################
 def apply_model(model, dataloader, X, Y):
     for i, (x, y) in enumerate(dataloader):
+        x = x.to(device)
+        y = y.to(device)
         out = model(x)
-        X[i*dataloader.batch_size : i*dataloader.batch_size+out.size(0)] = out.data.numpy()
-        Y[i*dataloader.batch_size : i*dataloader.batch_size+y.size(0)] = y.data.numpy()
+        X[i*dataloader.batch_size : i*dataloader.batch_size+out.size(0)] = out.data.cpu().numpy()
+        Y[i*dataloader.batch_size : i*dataloader.batch_size+y.size(0)] = y.data.cpu().numpy()
 
 def make_pretrained_classification():
     model, logger, dataloaders = classification_setup()
@@ -311,17 +313,19 @@ def make_pretrained_classification():
     model.classification = True
     model.pretrained_classification = True
     model.suffix = suffix.MaxSuffixClassification()
-    model = model.cpu()
     X_train = np.empty((args.num_examples_train, 2*args.num_features))
     Y_train = np.empty(args.num_examples_train)
     X_test  = np.empty((args.num_examples_test, 2*args.num_features))
     Y_test  = np.empty(args.num_examples_test)
     apply_model(model, dataloaders[0], X_train, Y_train)
     apply_model(model, dataloaders[2], X_test,  Y_test)
-    clf = sklearn.svm.SVC(gamma='scale') #default mode
+    print(Y_train, Y_test)
+    clf = sklearn.svm.SVC(gamma='scale', cache_size=10000) #default mode
     clf.fit(X_train, Y_train)
     acc = clf.score(X_test, Y_test)
-    print('Accuracy: {:.5f}'.format(acc))
+    print('Accuracy: {:.5f} with {}/{} split'.format(acc, len(Y_train), len(Y_test)))
+    pred = clf.predict(X_test[0:10])
+    print(pred, Y_test[0:10])
 
 ###############################################################################
 #                                   Main                                      #
