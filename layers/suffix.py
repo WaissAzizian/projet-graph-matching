@@ -80,7 +80,7 @@ class MaxSuffixClassification(nn.Module):
         m = x.size(-1)
         max_diag = torch.max(torch.diagonal(x, dim1=-2, dim2=-1), -1)[0]
         indices = torch.arange(m)
-        device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        device = torch.device('cuda:0') if x.is_cuda else torch.device('cpu')
         x[:, :, indices, indices] = float('-inf') * torch.ones(m).to(device)
         max_off = torch.max(torch.max(x, -1)[0], -1)[0]
         #return torch.mean(x, (2, 3))

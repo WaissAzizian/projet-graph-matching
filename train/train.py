@@ -311,6 +311,7 @@ def make_pretrained_classification():
     model.classification = True
     model.pretrained_classification = True
     model.suffix = suffix.MaxSuffixClassification()
+    model = model.cpu()
     X_train = np.empty((args.num_examples_train, 2*args.num_features))
     Y_train = np.empty(args.num_examples_train)
     X_test  = np.empty((args.num_examples_test, 2*args.num_features))
