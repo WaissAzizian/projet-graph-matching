@@ -23,7 +23,7 @@ experiment:
 	python3 train/train.py --num_examples_train 750 --num_examples_val 1 --num_examples_test 249 --n_vertices 136 --print_freq 100 --epoch 50 --mode experiment --lr 0.001 --num_layers 3 --num_blocks 2 --num_features 32 --real_world_dataset --gamma 0.9
 
 pretrained_classification:
-	python3 train/train.py --num_examples_train 750 --num_examples_val 1 --num_examples_test 249 --pretrained_classification
+	python3 train/train.py --num_examples_train 750 --num_examples_val 249 --num_examples_test 1 --pretrained_classification --batch_size 8
 clean:
 	rm -rf dataset/*
 

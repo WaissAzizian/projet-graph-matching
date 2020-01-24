@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import sklearn
+import gc
 
 #Pytorch requirements
 import unicodedata
@@ -315,10 +316,10 @@ def make_pretrained_classification():
     model.suffix = suffix.MaxSuffixClassification()
     X_train = np.empty((args.num_examples_train, 2*args.num_features))
     Y_train = np.empty(args.num_examples_train)
-    X_test  = np.empty((args.num_examples_test, 2*args.num_features))
-    Y_test  = np.empty(args.num_examples_test)
+    X_test  = np.empty((args.num_examples_val, 2*args.num_features))
+    Y_test  = np.empty(args.num_examples_val)
     apply_model(model, dataloaders[0], X_train, Y_train)
-    apply_model(model, dataloaders[2], X_test,  Y_test)
+    apply_model(model, dataloaders[1], X_test,  Y_test)
     print(Y_train, Y_test)
     clf = sklearn.svm.SVC(gamma='scale', cache_size=10000) #default mode
     clf.fit(X_train, Y_train)
