@@ -64,7 +64,13 @@ def compute_otloss(pred, _):
     x = pred[0].contiguous()
     y = pred[1].contiguous()
     loss = otloss(x, y)
-    assert (loss > 0).all()
+    if not (loss >= 0).all():
+        batch_index = (loss < 0).nonzero()[0][0]
+        with open('wrong_data.pkl', 'wb') as f:
+            torch.save(x, f)
+            torch.save(y, f)
+        print("Wrong data:", loss[batch_index], otloss(x[batch_index], y[batch_index]).item())
+    assert (loss >= 0).all()
     return loss.mean()
 
 class Siamese(nn.Module):

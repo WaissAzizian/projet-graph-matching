@@ -10,7 +10,7 @@ quick_test:
 	python3 train/train.py --num_examples_test 100 --mode test
 
 quick_experiment:
-	python3 train/train.py --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 1 --mode experiment --lr 0.0001 --num_layers 3 --num_blocks 2 --num_features 16
+	python3 train/train.py --num_examples_train 10 --num_examples_test 10 --print_freq 100 --epoch 2 --mode experiment --lr 0.0001 --num_layers 3 --num_blocks 2 --num_features 16 --otloss
 
 CMD="python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mode validation --print_freq 1000 --epoch 100 --step_epoch 5 --num_blocks 2 --generative_model Regular --noise 0.05"
 validation:
@@ -20,7 +20,7 @@ overfit:
 	python3 train/train.py --expressive_suffix False --num_examples_train 5 --num_examples_test 995 --print_freq 1000 --epoch 50 --lr 0.01 --gamma 0.75 --overfit --classification --num_layers 2 --num_features 2 --num_blocks 1
 
 experiment:
-	python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mode experiment --print_freq 1000 --epoch 100 --step_epoch 5 --num_blocks 2 --generative_model Regular --noise 0.05 --lr 1e-3 --gamma 0.9 --num_features 64 --num_layers 3
+	python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mode experiment --print_freq 1000 --epoch 100 --step_epoch 5 --num_blocks 2 --generative_model Regular --noise 0.05 --lr 1e-3 --gamma 0.9 --num_features 32 --num_layers 3 --otloss
 
 clean:
 	rm -rf dataset/*
