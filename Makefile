@@ -45,7 +45,6 @@ HOST=$(INSTANCE).$(ZONE).$(PROJECT)
 
 start:
 	gcloud compute instances start $(INSTANCE)
-	gcloud compute config-ssh
 
 stop:
 	gcloud compute instances stop $(INSTANCE)
@@ -54,6 +53,7 @@ fetch_results:
 	rsync -Pavu "$(HOST)":/home/$(GUSER)/projet-graph-matching/experiments/ "$(PWD)"/experiments/
 
 connect:
+	gcloud compute config-ssh
 	ssh $(HOST)
 
 list:
