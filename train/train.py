@@ -179,10 +179,11 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
     print('Optimization finished.')
     logger.save_model(siamese_gnn)
 
-def test(siamese_gnn, logger, gen):
+def test(siamese_gnn, logger, gen, dataloader=None):
     siamese_gnn.eval()
     labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
-    dataloader = gen.test_loader(args.batch_size)
+    if not dataloader:
+        dataloader = gen.test_loader(args.batch_size)
     for it, sample in enumerate(dataloader):
         sample = sample.to(device)
         pred = siamese_gnn(sample[:, 0], sample[:, 1])
@@ -207,6 +208,7 @@ def make_qap():
     if args.real_world_dataset:
         train_dl, val_dl, test_dl = selfsupervised_dataloader(args, gen)
         train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch, dataloader = train_dl)
+        test(siamese_gnn, logger, gen, dataloader=val_dl)
     elif args.mode == 'train':
         train(siamese_gnn, logger, gen, args.lr, args.gamma, args.step_epoch)
     elif args.mode == 'test':

@@ -4,3 +4,5 @@ python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mod
 Barabasi-albert graphs with 0.05 noise: accuracy 0.9346289038658142
 python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mode experiment --print_freq 1000 --epoch 50 --step_epoch 5 --num_blocks 2 --generative_model BarabasiAlbert --noise 0.05 --lr 1e-3 --gamma 0.99 --num_features 64 --num_layers 3
 
+Regular graphs with 0.05 noise: Accuracy:  0.6948308820724487
+python3 train/train.py --num_examples_train 20000 --num_examples_test 1000 --mode experiment --print_freq 1000 --epoch 100 --step_epoch 5 --num_blocks 2 --generative_model Regular --noise 0.05 --lr 1e-3 --gamma 0.9 --num_features 32 --num_layers 3 --n_vertices 136 --batch_size 8
