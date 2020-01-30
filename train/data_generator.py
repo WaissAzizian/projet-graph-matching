@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.utils
 import torch_geometric as geometric
+import torch.nn.functional as F
 
 class Generator(object):
     def __init__(self):
@@ -209,24 +210,24 @@ class Adjacency_to_tensor_noise:
 
     def __call__(self, ex):
         W = ex.adj
+        n = len(W)
         if self.random_noise:
             self.noise = np.random.uniform(0.000, 0.050, 1)
         if self.noise_model == 1:
             # use noise model from [arxiv 1602.04181], eq (3.8)
-            noise = torch.from_numpy(self.data_generator.ErdosRenyi(self.noise, self.n_vertices))
+            noise = torch.from_numpy(self.data_generator.ErdosRenyi(self.noise, n))
             W_noise = W*(1-noise) + (1-W)*noise
         elif self.noise_model == 2:
             # use noise model from [arxiv 1602.04181], eq (3.9)
             pe1 = self.noise
             pe2 = (self.edge_density*self.noise)/(1.0-self.edge_density)
-            noise1 = torch.from_numpy(self.data_generator.ErdosRenyi_netx(pe1, self.n_vertices))
-            noise2 = torch.from_numpy(self.data_generator.ErdosRenyi_netx(pe2, self.n_vertices))
+            noise1 = torch.from_numpy(self.data_generator.ErdosRenyi_netx(pe1, n))
+            noise2 = torch.from_numpy(self.data_generator.ErdosRenyi_netx(pe2, n))
             W_noise = W*(1-noise1) + (1-W)*noise2
         else:
             raise ValueError('Noise model {} not implemented'
                              .format(self.noise_model))
         degrees = W.sum(1)
-        n = len(W)
         B = torch.zeros((n,n,2))
         B[:, :, 1] = W
         indices = torch.arange(n)
@@ -242,20 +243,32 @@ class Adjacency_to_tensor_noise:
     def __repr__(self):
         return 'Adjacency_to_tensor'
 
-IMDB_MAX_NUM_NODES=136 #for IMDB-BINARY dataset
+def collate_fn(lst):
+    max_node = 0
+    for B in lst:
+        max_node = max(max_node, B.size(1))
+    batch = torch.zeros(len(lst), B.size(0), max_node, max_node, B.size(-1))
+    for i, B in enumerate(lst):
+        delta_pad = max_node - B.size(1)
+        batch[i] = F.pad(B, (0, 0, delta_pad//2, delta_pad - delta_pad//2, delta_pad//2, delta_pad - delta_pad//2, 0, 0))
+    return batch
+
 def selfsupervised_dataloader(args, data_generator):
-    dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.Compose([
-            geometric.transforms.ToDense(num_nodes=IMDB_MAX_NUM_NODES),
+    if args.generative_model == "ErdosRenyi":
+        args.generative_model = "IMDB-BINARY"
+    dataset = geometric.datasets.TUDataset(args.path_dataset, args.generative_model, transform=geometric.transforms.Compose([
+            geometric.transforms.ToDense(),
             Adjacency_to_tensor_noise(args, data_generator),
         ]))
+
     if args.semi_supervised:
-        dl = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        dl = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=1, collate_fn = collate_fn)
         return dl, dl, dl
     else:
         assert args.num_examples_train + args.num_examples_val + args.num_examples_test == len(dataset)
         test_dataset = dataset[args.num_examples_train + args.num_examples_val:]
         train_dataset, val_dataset = torch.utils.data.random_split(dataset[:(args.num_examples_train + args.num_examples_val)], [args.num_examples_train, args.num_examples_val])
-        train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
-        test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
-        val_dl   = torch.utils.data.DataLoader(  val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1, collate_fn = collate_fn)
+        test_dl  = torch.utils.data.DataLoader( test_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1, collate_fn = collate_fn)
+        val_dl   = torch.utils.data.DataLoader(  val_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1, collate_fn = collate_fn)
         return train_dl, val_dl, test_dl

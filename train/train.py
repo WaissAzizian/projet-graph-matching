@@ -144,7 +144,6 @@ def compute_loss(pred, labels):
 
 def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
     siamese_gnn.train()
-    labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
     optimizer = torch.optim.Adam(siamese_gnn.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_epoch, gamma=gamma)
     if not dataloader:
@@ -152,6 +151,7 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
     start = time.time()
     for epoch in range(args.epoch):
         for it, sample in enumerate(dataloader):
+            labels = torch.arange(0, sample.size(2)).unsqueeze(0).expand(batch_size, sample.size(2)).to(device)
             sample = sample.to(device)
             pred = siamese_gnn(sample[:, 0], sample[:, 1])
             loss = compute_loss(pred, labels[: len(pred)])
@@ -181,10 +181,10 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
 
 def test(siamese_gnn, logger, gen, dataloader=None):
     siamese_gnn.eval()
-    labels = torch.arange(0, gen.n_vertices).unsqueeze(0).expand(batch_size, gen.n_vertices).to(device)
     if not dataloader:
         dataloader = gen.test_loader(args.batch_size)
     for it, sample in enumerate(dataloader):
+        labels = torch.arange(0, sample.size(2)).unsqueeze(0).expand(batch_size, sample.size(2)).to(device)
         sample = sample.to(device)
         pred = siamese_gnn(sample[:, 0], sample[:, 1])
         logger.add_test_accuracy(pred, labels[: len(pred)])
@@ -200,7 +200,8 @@ def setup():
     siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations, wasserstein_iterations=args.wasserstein_iterations).to(device)
     gen = Generator()
     gen.set_args(vars(args))
-    gen.load_dataset()
+    if not args.real_world_dataset:
+        gen.load_dataset()
     return siamese_gnn, logger, gen
 
 def make_qap():
