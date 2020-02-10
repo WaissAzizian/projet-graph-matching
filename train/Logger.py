@@ -12,6 +12,8 @@ from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
 
+import lap
+
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
     dtype_l = torch.cuda.LongTensor
@@ -21,13 +23,33 @@ else:
     dtype_l = torch.LongTensor
     torch.manual_seed(0)
 
-def compute_recovery_rate(pred, labels):
-    pred = pred.max(-1)[1]
-    error = 1 - torch.eq(pred, labels).type(dtype)#.squeeze(2)
-    frob_norm = error.mean(1)#.squeeze(1)
-    accuracy = 1 - frob_norm
-    accuracy = accuracy.mean(0).squeeze()
-    return accuracy.data.cpu().numpy()#[0]
+def predict_lap(matrices):
+    assert len(matrices.size()) == 3, matrices.size()
+    np_matrices = matrices.data.cpu().numpy()
+    permutations = np.empty((matrices.size(0), matrices.size(1)), dtype=int)
+    for index, matrix in enumerate(np_matrices):
+        assert len(matrix.shape) == 2, cost_matrix.shape
+        permutation, _ = lap.lapjv(-matrix, return_cost=False)
+        permutations[index] = permutation
+    return permutations
+
+def accuracy_lap(pred):
+    permutations = predict_lap(pred)
+    m = permutations.shape[1]
+    identity = np.arange(m)
+    acc = np.mean(permutations == identity[np.newaxis, :])
+    return acc
+
+def compute_recovery_rate(pred, labels, lap):
+    if not lap:
+        pred = pred.max(-1)[1]
+        error = 1 - torch.eq(pred, labels).type(dtype)#.squeeze(2)
+        frob_norm = error.mean(1)#.squeeze(1)
+        accuracy = 1 - frob_norm
+        accuracy = accuracy.mean(0).squeeze()
+        return accuracy.data.cpu().numpy()
+    else:
+        return accuracy_lap(pred)
 
 class Logger(object):
     def __init__(self, path_logger):
@@ -41,8 +63,10 @@ class Logger(object):
             os.mkdir(directory)
         self.loss_train = []
         self.loss_test = []
-        self.accuracy_train = []
-        self.accuracy_test = []
+        self.accuracy_train_lap = []
+        self.accuracy_train_plain = []
+        self.accuracy_test_lap = []
+        self.accuracy_test_plain = []
         self.args = None
 
     def write_settings(self, args):
@@ -85,12 +109,16 @@ class Logger(object):
         self.loss_test.append(loss)
 
     def add_train_accuracy(self, pred, labels):
-        accuracy = compute_recovery_rate(pred, labels)
-        self.accuracy_train.append(accuracy)
+        accuracy_lap = compute_recovery_rate(pred, labels, True)
+        self.accuracy_train_lap.append(accuracy_lap)
+        accuracy_plain = compute_recovery_rate(pred, labels, False)
+        self.accuracy_train_plain.append(accuracy_plain)
 
     def add_test_accuracy(self, pred, labels):
-        accuracy = compute_recovery_rate(pred, labels)
-        self.accuracy_test.append(accuracy)
+        accuracy_lap = compute_recovery_rate(pred, labels, True)
+        self.accuracy_test_lap.append(accuracy_lap)
+        accuracy_plain = compute_recovery_rate(pred, labels, False)
+        self.accuracy_test_plain.append(accuracy_plain)
 
     def plot_train_loss(self):
         plt.figure(0)
@@ -144,6 +172,6 @@ class Logger(object):
 
     def save_results(self):
         path = os.path.join(self.path, 'results.npz')
-        np.savez(path, accuracy_train=np.array(self.accuracy_train),
-                 accuracy_test=np.array(self.accuracy_test),
+        np.savez(path, accuracy_train=np.array(self.accuracy_train_lap),
+                 accuracy_test=np.array(self.accuracy_test_lap),
                  loss_train=self.loss_train, loss_test=self.loss_test)

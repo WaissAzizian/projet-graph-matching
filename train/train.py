@@ -82,10 +82,6 @@ parser.add_argument('--clip_grad_norm', nargs='?', const=1, type=float,
 
 parser.add_argument('--num_features', nargs='?', const=1, type=int,
                     default=20)
-parser.add_argument('--sinkhorn_iterations', nargs='?', const=1, type=int,
-                    default=0)
-parser.add_argument('--wasserstein_iterations', nargs='?', const=1, type=int,
-                    default=0)
 parser.add_argument('--classification', nargs= '?', const=1, type=bool,
                     default=False)
 parser.add_argument('--pretrained_classification', nargs= '?', const=1, type=bool,
@@ -102,9 +98,9 @@ parser.add_argument('--num_layers', nargs='?', const=1, type=int,
                     default=20)
 parser.add_argument('--num_blocks', nargs='?', const=1, type=int,
                     default=3)
-parser.add_argument('--J', nargs='?', const=1, type=int, default=4)
 
 args = parser.parse_args()
+print(args)
 
 if torch.cuda.is_available():
     dtype = torch.cuda.FloatTensor
@@ -132,8 +128,8 @@ def make_config(args):
 
 batch_size = args.batch_size
 criterion = nn.CrossEntropyLoss()
-template1 = '{:<10} {:<10} {:<10} {:<10} {:<15} {:<10} {:<10} {:<10} '
-template2 = '{:<10} {:<10} {:<10.5f} {:<10.5f} {:<15} {:<10} {:<10} {:<10.3f} \n'
+template1 = '{:<10} {:<10} {:<10} {:<15} {:<15} {:<15} {:<10} {:<10} {:<10}'
+template2 = '{:<10} {:<10} {:<10.5f} {:<15.5f} {:<15.5f} {:<15} {:<10} {:<10} {:<10.3f} \n'
 
 
 def compute_loss(pred, labels):
@@ -163,12 +159,10 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
             logger.add_train_accuracy(pred, labels[: len(pred)])
             elapsed = time.time() - start
             if it % logger.args['print_freq'] == 0:
-                logger.plot_train_accuracy()
-                logger.plot_train_loss()
                 loss = loss.data.cpu().numpy()#[0]
-                info = ['epoch', 'iteration', 'loss', 'accuracy', 'edge_density',
+                info = ['epoch', 'iteration', 'loss', 'LAP accuracy', 'plain accuracy', 'edge_density',
                     'noise', 'model', 'elapsed']
-                out = [epoch, it, loss.item(), logger.accuracy_train[-1].item(), args.edge_density,
+                out = [epoch, it, loss.item(), logger.accuracy_train_lap[-1].item(), logger.accuracy_train_plain[-1].item(), args.edge_density,
                    args.noise, args.generative_model, elapsed]
                 print(template1.format(*info))
                 print(template2.format(*out))
@@ -188,16 +182,18 @@ def test(siamese_gnn, logger, gen, dataloader=None):
         sample = sample.to(device)
         pred = siamese_gnn(sample[:, 0], sample[:, 1])
         logger.add_test_accuracy(pred, labels[: len(pred)])
-    accuracy = sum(logger.accuracy_test)/len(logger.accuracy_test)
-    print('Accuracy: ', accuracy)
-    return accuracy
+    accuracy_lap = sum(logger.accuracy_test_lap)/len(logger.accuracy_test_lap)
+    accuracy_plain = sum(logger.accuracy_test_plain)/len(logger.accuracy_test_plain)
+    print('LAP Accuracy: ', accuracy_lap)
+    print('Plain Accuracy: ', accuracy_plain)
+    return accuracy_lap
 
 def setup():
     logger = Logger(args.path_logger)
     logger.write_settings(args)
     config = make_config(args)
     model = base_model.BaseModel(config)
-    siamese_gnn = siamese.Siamese(model, sinkhorn_iterations=args.sinkhorn_iterations, wasserstein_iterations=args.wasserstein_iterations).to(device)
+    siamese_gnn = siamese.Siamese(model).to(device)
     gen = Generator()
     gen.set_args(vars(args))
     if not args.real_world_dataset:
