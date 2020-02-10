@@ -4,7 +4,6 @@ import networkx
 import torch
 import torch.nn as nn
 import torch.utils
-import torch_geometric as geometric
 import torch.nn.functional as F
 
 class Generator(object):
@@ -187,6 +186,9 @@ class Adjacency_to_tensor:
 
 IMDB_MAX_NUM_NODES=136 #for IMDB-BINARY dataset
 def classification_dataloader(args):
+    
+    import torch_geometric as geometric
+    
     dataset = geometric.datasets.TUDataset(args.path_dataset, "IMDB-BINARY", transform=geometric.transforms.Compose([
             geometric.transforms.ToDense(num_nodes=IMDB_MAX_NUM_NODES),
             Adjacency_to_tensor(),
@@ -254,6 +256,9 @@ def collate_fn(lst):
     return batch
 
 def selfsupervised_dataloader(args, data_generator):
+    
+    import torch_geometric as geometric
+    
     if args.generative_model == "ErdosRenyi":
         args.generative_model = "IMDB-BINARY"
     dataset = geometric.datasets.TUDataset(args.path_dataset, args.generative_model, transform=geometric.transforms.Compose([
