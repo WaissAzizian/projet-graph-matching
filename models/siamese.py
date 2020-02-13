@@ -11,10 +11,17 @@ class Siamese(nn.Module):
         if not isinstance(sample, torch.Tensor):
             g1, g2 = sample.batch[:,0], sample.batch[:,1]
             mask = sample.mask
+<<<<<<< HEAD
             emb1, emb2 = self.gnn(g1, mask), self.gnn(g2, mask)
         else:
             g1, g2 = sample[:,0], sample[:, 1]
             mask = torch.ones(g1.size()[:-1]).to(torch.device(g1.device))
             emb1, emb2 = self.gnn(g1, mask), self.gnn(g2, mask)
+=======
+            emb1, emb2 = self.gnn(g1, mask=mask), self.gnn(g2, mask=mask)
+        else:
+            g1, g2 = sample[:,0], sample[:, 1]
+            emb1, emb2 = self.gnn(g1), self.gnn(g2)
+>>>>>>> e8c52e7d7710cde0aac6cb308b3730b4f81be74a
         out = torch.bmm(emb1, emb2.permute(0, 2, 1))
         return out, mask
