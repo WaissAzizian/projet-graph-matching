@@ -244,16 +244,27 @@ class Adjacency_to_tensor_noise:
 
     def __repr__(self):
         return 'Adjacency_to_tensor'
+    
+@dataclass
+class CustomBatch:
+    
+    batch: torch.Tensor
+    mask:  torch.Tensor
+    
+    def to(self, device):
+        return CustomBatch(self.batch.to(device), self.mask.to(device))
 
 def collate_fn(lst):
     max_node = 0
     for B in lst:
         max_node = max(max_node, B.size(1))
     batch = torch.zeros(len(lst), B.size(0), max_node, max_node, B.size(-1))
+    mask  = torch.zeros(len(lst),            max_node, max_node)
     for i, B in enumerate(lst):
         delta_pad = max_node - B.size(1)
         batch[i] = F.pad(B, (0, 0, delta_pad//2, delta_pad - delta_pad//2, delta_pad//2, delta_pad - delta_pad//2, 0, 0))
-    return batch
+        mask[i][:B.size(1),:B.size(1)] = 1
+    return CustomBatch(batch, mask)
 
 def selfsupervised_dataloader(args, data_generator):
     
