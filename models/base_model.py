@@ -31,7 +31,7 @@ class BaseModel(nn.Module):
 ##### END OF CODE FROM github.com/hadarser/ProvablyPowerfulGraphNetworks_torch #####
         self.classification = config.classification
         self.pretrained_classification = config.pretrained_classification
-                
+
         if config.classification:
             self.suffix = suffix.MaxSuffixClassification()
             if not config.pretrained_classification:
@@ -43,13 +43,9 @@ class BaseModel(nn.Module):
             self.suffix = suffix.Features_2_to_1()
             #self.mlp = modules.MlpBlock1d([5*block_features[-1], 512, 256, 128, 64])
 
-<<<<<<< HEAD
     def forward(self, x, mask):
-=======
-    def forward(self, x, mask=None):
-        if mask is not None:
+        if mask is None:
             mask = torch.ones(x.size()[:-1])
->>>>>>> e8c52e7d7710cde0aac6cb308b3730b4f81be74a
         #here x.shape = (bs, n_vertices, n_vertices, n_features)
         x = x.permute(0, 3, 1, 2)
         #expects x.shape = (bs, n_features, n_vertices, n_vertices)

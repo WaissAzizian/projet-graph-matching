@@ -148,11 +148,7 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
     for epoch in range(args.epoch):
         for it, sample in enumerate(dataloader):
             sample = sample.to(device)
-<<<<<<< HEAD
             pred, mask = siamese_gnn(sample)
-=======
-            pred = siamese_gnn(sample)
->>>>>>> e8c52e7d7710cde0aac6cb308b3730b4f81be74a
             labels = torch.arange(0, pred.size(1)).unsqueeze(0).expand(batch_size, pred.size(1)).to(device)
             loss = compute_loss(pred, labels[: len(pred)])
             siamese_gnn.zero_grad()
@@ -183,15 +179,9 @@ def test(siamese_gnn, logger, gen, dataloader=None):
         dataloader = gen.test_loader(args.batch_size)
     for it, sample in enumerate(dataloader):
         sample = sample.to(device)
-<<<<<<< HEAD
         pred, mask = siamese_gnn(sample)
         labels = torch.arange(0, pred.size(1)).unsqueeze(0).expand(batch_size, pred.size(1)).to(device)
         logger.add_test_accuracy(pred, labels[: len(pred)], mask)
-=======
-        pred = siamese_gnn(sample)
-        labels = torch.arange(0, pred.size(1)).unsqueeze(0).expand(batch_size, pred.size(1)).to(device)
-        logger.add_test_accuracy(pred, labels[: len(pred)])
->>>>>>> e8c52e7d7710cde0aac6cb308b3730b4f81be74a
     accuracy_lap = sum(logger.accuracy_test_lap)/len(logger.accuracy_test_lap)
     accuracy_plain = sum(logger.accuracy_test_plain)/len(logger.accuracy_test_plain)
     print('LAP Accuracy: ', accuracy_lap)
