@@ -147,16 +147,16 @@ def train(siamese_gnn, logger, gen, lr, gamma, step_epoch, dataloader = None):
     start = time.time()
     for epoch in range(args.epoch):
         for it, sample in enumerate(dataloader):
-            labels = torch.arange(0, sample.size(2)).unsqueeze(0).expand(batch_size, sample.size(2)).to(device)
             sample = sample.to(device)
-            pred = siamese_gnn(sample[:, 0], sample[:, 1])
+            pred, mask = siamese_gnn(sample)
+            labels = torch.arange(0, pred.size(1)).unsqueeze(0).expand(batch_size, pred.size(1)).to(device)
             loss = compute_loss(pred, labels[: len(pred)])
             siamese_gnn.zero_grad()
             loss.backward()
             #nn.utils.clip_grad_norm(siamese_gnn.parameters(), args.clip_grad_norm)
             optimizer.step()
             logger.add_train_loss(loss)
-            logger.add_train_accuracy(pred, labels[: len(pred)])
+            logger.add_train_accuracy(pred, labels[: len(pred)], mask)
             elapsed = time.time() - start
             if it % logger.args['print_freq'] == 0:
                 loss = loss.data.cpu().numpy()#[0]
@@ -178,10 +178,10 @@ def test(siamese_gnn, logger, gen, dataloader=None):
     if not dataloader:
         dataloader = gen.test_loader(args.batch_size)
     for it, sample in enumerate(dataloader):
-        labels = torch.arange(0, sample.size(2)).unsqueeze(0).expand(batch_size, sample.size(2)).to(device)
         sample = sample.to(device)
-        pred = siamese_gnn(sample[:, 0], sample[:, 1])
-        logger.add_test_accuracy(pred, labels[: len(pred)])
+        pred, mask = siamese_gnn(sample)
+        labels = torch.arange(0, pred.size(1)).unsqueeze(0).expand(batch_size, pred.size(1)).to(device)
+        logger.add_test_accuracy(pred, labels[: len(pred)], mask)
     accuracy_lap = sum(logger.accuracy_test_lap)/len(logger.accuracy_test_lap)
     accuracy_plain = sum(logger.accuracy_test_plain)/len(logger.accuracy_test_plain)
     print('LAP Accuracy: ', accuracy_lap)

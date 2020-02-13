@@ -17,12 +17,12 @@ class RegularBlock(nn.Module):
 
         self.skip = SkipConnection(in_features+out_features, out_features)
 
-    def forward(self, inputs):
-        mlp1 = self.mlp1(inputs)
-        mlp2 = self.mlp2(inputs)
+    def forward(self, inputs, mask):
+        mlp1 = self.mlp1(inputs) * mask.unsqueeze(1)
+        mlp2 = self.mlp2(inputs) * mask.unsqueeze(1)
         mult = torch.matmul(mlp1, mlp2)
         out = torch.cat((inputs, mult), dim=1)
-        out = self.skip(out)
+        out = self.skip(out) * mask.unsqueeze(1)
         return out
 
 
