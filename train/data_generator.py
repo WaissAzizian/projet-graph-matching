@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.utils
 import torch.nn.functional as F
+from dataclasses import dataclass
 
 class Generator(object):
     def __init__(self):

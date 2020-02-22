@@ -23,24 +23,20 @@ else:
     dtype_l = torch.LongTensor
     torch.manual_seed(0)
 
-def predict_lap(matrices):
+def accuracy_lap(matrices, mask):
     assert len(matrices.size()) == 3, matrices.size()
-    np_matrices = matrices.data.cpu().numpy()
-    permutations = np.empty((matrices.size(0), matrices.size(1)), dtype=int)
-    for index, matrix in enumerate(np_matrices):
-        assert len(matrix.shape) == 2, cost_matrix.shape
+    acc = 0
+    for index, matrix in enumerate(matrices):
+        matrix = matrix[mask[index] == 1].data.cpu().numpy()
+        matrix = np.reshape(matrix, (int(np.sqrt(len(matrix))), -1))
+        assert len(matrix.shape) == 2, matrix.shape
         permutation, _ = lap.lapjv(-matrix, return_cost=False)
-        permutations[index] = permutation
-    return permutations
+        m = permutation.shape[0]
+        identity = np.arange(m)    
+        acc += np.mean(permutation == identity)
+    return acc/matrices.size(0)
 
-def accuracy_lap(pred):
-    permutations = predict_lap(pred)
-    m = permutations.shape[1]
-    identity = np.arange(m)
-    acc = np.mean(permutations == identity[np.newaxis, :])
-    return acc
-
-def compute_recovery_rate(pred, labels, lap):
+def compute_recovery_rate(pred, labels, mask, lap):
     if not lap:
         pred = pred.max(-1)[1]
         error = 1 - torch.eq(pred, labels).type(dtype)#.squeeze(2)
@@ -49,7 +45,7 @@ def compute_recovery_rate(pred, labels, lap):
         accuracy = accuracy.mean(0).squeeze()
         return accuracy.data.cpu().numpy()
     else:
-        return accuracy_lap(pred)
+        return accuracy_lap(pred, mask)
 
 class Logger(object):
     def __init__(self, path_logger):
@@ -108,16 +104,16 @@ class Logger(object):
     def add_test_loss(self, loss):
         self.loss_test.append(loss)
 
-    def add_train_accuracy(self, pred, labels):
-        accuracy_lap = compute_recovery_rate(pred, labels, True)
+    def add_train_accuracy(self, pred, labels, mask):
+        accuracy_lap = compute_recovery_rate(pred, labels, mask, True)
         self.accuracy_train_lap.append(accuracy_lap)
-        accuracy_plain = compute_recovery_rate(pred, labels, False)
+        accuracy_plain = compute_recovery_rate(pred, labels, mask, False)
         self.accuracy_train_plain.append(accuracy_plain)
 
-    def add_test_accuracy(self, pred, labels):
-        accuracy_lap = compute_recovery_rate(pred, labels, True)
+    def add_test_accuracy(self, pred, labels, mask):
+        accuracy_lap = compute_recovery_rate(pred, labels, mask, True)
         self.accuracy_test_lap.append(accuracy_lap)
-        accuracy_plain = compute_recovery_rate(pred, labels, False)
+        accuracy_plain = compute_recovery_rate(pred, labels, mask, False)
         self.accuracy_test_plain.append(accuracy_plain)
 
     def plot_train_loss(self):

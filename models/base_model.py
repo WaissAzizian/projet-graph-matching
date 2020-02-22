@@ -43,9 +43,7 @@ class BaseModel(nn.Module):
             self.suffix = suffix.Features_2_to_1()
             #self.mlp = modules.MlpBlock1d([5*block_features[-1], 512, 256, 128, 64])
 
-    def forward(self, x, mask=None):
-        if mask is not None:
-            mask = torch.ones(x.size()[:-1])
+    def forward(self, x, mask):
         #here x.shape = (bs, n_vertices, n_vertices, n_features)
         x = x.permute(0, 3, 1, 2)
         #expects x.shape = (bs, n_features, n_vertices, n_vertices)
